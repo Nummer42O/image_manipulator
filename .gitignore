@@ -1,0 +1,4 @@
+.token
+.vscode
+build/**
+.headers.code-workspace
