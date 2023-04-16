@@ -1,4 +1,4 @@
 .token
 .vscode
-build/**
+build
 .headers.code-workspace
