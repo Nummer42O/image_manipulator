@@ -65,7 +65,7 @@ void setChannelsToAvg(const cv::Mat& src, cv::Mat& dst, const image_proc::Channe
     if (output_channel == image_proc::ChannelOption::ALL) {
         dst.forEach<image_proc::Pixel>(
             [](image_proc::Pixel& pixel, const int*) -> void {
-                uint8_t avg = pixel[0] + pixel[1] + pixel[2];
+                uint8_t avg = pixel[0] + pixel[1] + pixel[2] / 3u;
 
                 pixel[0] = avg; pixel[1] = avg; pixel[2] = avg;
             }
@@ -73,7 +73,7 @@ void setChannelsToAvg(const cv::Mat& src, cv::Mat& dst, const image_proc::Channe
     } else {
         dst.forEach<image_proc::Pixel>(
             [output_channel](image_proc::Pixel& pixel, const int*) -> void {
-                uint8_t avg = pixel[0] + pixel[1] + pixel[2];
+                uint8_t avg = pixel[0] + pixel[1] + pixel[2] / 3u;
 
                 pixel[output_channel] = avg;
                 pixel[(output_channel + 1) % 3] = 0;
