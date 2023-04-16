@@ -14,7 +14,7 @@
  *  - look into hv_switch again, maybe another version? single button?
  *  - HSV presets
  *  - fix windowFinishSetup for moving?
- *  - compression doesn't get applied, why?
+ *  - average color display
 */
 
 Window::Window() {
