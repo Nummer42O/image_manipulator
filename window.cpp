@@ -337,6 +337,31 @@ Window::Window() {
     this->show_all_children();
 }
 
+void Window::loadImage(const std::string& filepath) {
+    if (filepath.empty()) {
+        return;
+    }
+
+    // load initial image
+    if (!image_proc::loadImage(this->original_image, filepath)) {
+        Gtk::MessageDialog dialog(*this, "Failed to load initial image:", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        dialog.set_secondary_text(filepath);
+        dialog.run();
+    } else {
+        Window::convertCVtoGTK(this->original_image, this->original_image_widget);
+
+        if (this->current_page_number == Pages::HSV) {
+            if (this->hsv_blocked) {
+                return;
+            }
+
+            this->applyHSVEdits();
+        } else {
+            this->applyChannelEdits();
+        }
+    }
+}
+
 void Window::convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst) {
     assert(src.data != NULL);
 
@@ -556,7 +581,8 @@ void Window::loadImage() {
     }
 
     if (!image_proc::loadImage(this->original_image, filepath)) {
-        Gtk::MessageDialog dialog(*this, "Failed to load image.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        Gtk::MessageDialog dialog(*this, "Failed to load image:", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        dialog.set_secondary_text(filepath);
         dialog.run();
     } else {
         Window::convertCVtoGTK(this->original_image, this->original_image_widget);

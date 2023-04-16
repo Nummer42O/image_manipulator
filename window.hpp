@@ -7,6 +7,8 @@
 class Window: public Gtk::Window {
     public:
         Window();
+        
+        void loadImage(const std::string& filepath);
     private:
         static void convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst);
 
