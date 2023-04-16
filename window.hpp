@@ -39,10 +39,10 @@ class Window: public Gtk::Window {
             HSV = 0,
             CHANNELS = 1
         };
-        image_proc::ModifierOption  current_channel_modifier = image_proc::ModifierOption::AVG;
-        image_proc::ChannelOption   current_channel_option   = image_proc::ChannelOption::ALL;
-        image_proc::CompressionMode current_compression_mode = image_proc::CompressionMode::NORMAL;
-        guint                       current_page_number      = Pages::HSV;
+        image_proc::ModifierOption  current_channel_modifier;
+        image_proc::ChannelOption   current_channel_option;
+        image_proc::CompressionMode current_compression_mode;
+        guint                       current_page_number;
 
         Gtk::Paned base, left_base;
         Gtk::Switch hv_switch;

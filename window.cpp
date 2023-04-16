@@ -17,7 +17,6 @@
  *  - fix glitches with non-mathematical channel operators
  *  - compression doesn't get applied, why?
  *  - add option to launch with image open
- *  - make default "current_..." values be set by their respective callbacks
 */
 
 Window::Window() {
@@ -149,8 +148,8 @@ Window::Window() {
 
     // average
     Gtk::RadioButton* avg_option = Gtk::make_managed<Gtk::RadioButton>(channel_modifier_options, "Average");
-    avg_option->set_active(); //deliberately in front of singal connect to not trigger callback when activating as default
     avg_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeChannelManipulatorModifier), image_proc::ModifierOption::AVG));
+    avg_option->set_active();
     channel_modifiers_options_vertical_box->pack_start(*avg_option, Gtk::PACK_EXPAND_PADDING);
     
     // maximum
@@ -225,8 +224,8 @@ Window::Window() {
 
     // all
     Gtk::RadioButton* all_channel_option = Gtk::make_managed<Gtk::RadioButton>(channel_options, "All");
-    all_channel_option->set_active();
     all_channel_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeChannelManipulatorChannel), image_proc::ChannelOption::ALL));
+    all_channel_option->set_active();
     channel_options_vertical_box->pack_start(*all_channel_option, Gtk::PACK_EXPAND_PADDING);
     /* #endregion               channel options */
     /* #endregion           channel manipulation */
@@ -265,8 +264,8 @@ Window::Window() {
 
     // 8 bit / normal option
     Gtk::RadioButton* normal_option = Gtk::make_managed<Gtk::RadioButton>(compression_mode_group, "8 bit");
-    normal_option->set_active();
     normal_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::compressionModechange), image_proc::CompressionMode::NORMAL));
+    normal_option->set_active();
     compression_modes_vertical_box->pack_start(*normal_option, Gtk::PACK_EXPAND_PADDING);
     /* #endregion           options*/
     /* #endregion       compression options */
