@@ -10,13 +10,11 @@
 #define SCALE_PADDING   20
 
 /* TODO:
- *  - fix seg fault when slider activation
+ *  - fix seg fault when slider activation -> sigc::ref?
  *  - look into hv_switch again, maybe another version? single button?
  *  - HSV presets
- *  - look into why windowFinishSetup is broken
- *  - fix glitches with non-mathematical channel operators
+ *  - fix windowFinishSetup for moving?
  *  - compression doesn't get applied, why?
- *  - add option to launch with image open
 */
 
 Window::Window() {

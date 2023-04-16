@@ -155,8 +155,10 @@ void setChannelsToMax(const cv::Mat& src, cv::Mat& dst, const image_proc::Channe
     }}
 
 void image_proc::manipulateChannels(const cv::Mat& src, cv::Mat& dst, const ModifierOption& modifier, const ChannelOption& channel) {
+    int output_channel = channel;
+
     cv::Mat temp;
-    int channel_index;
+    int input_channel;
     switch (modifier) {
         case ModifierOption::MIN:
             setChannelsToMin(src, dst, channel);
@@ -171,33 +173,53 @@ void image_proc::manipulateChannels(const cv::Mat& src, cv::Mat& dst, const Modi
         case ModifierOption::GREEN:
         case ModifierOption::BLUE:
             src.copyTo(temp);
-            channel_index = modifier;
+            input_channel = modifier;
 
             break;
         case ModifierOption::HUE:
         case ModifierOption::SAT:
         case ModifierOption::VAL:
             cv::cvtColor(src, temp, cv::COLOR_RGB2HSV_FULL);
-            channel_index = modifier - 3;
+            input_channel = modifier - 3;
 
             break;
     }
 
     std::array<cv::Mat, 3> channels;
     cv::split(temp, channels);
-    cv::Mat empty_temp(src.rows, src.cols, CV_8UC3);
-    if (channel == ChannelOption::ALL) {
-        cv::Mat channel_mat = channels[channel_index];
-        
-        cv::cvtColor(channel_mat, empty_temp, cv::COLOR_GRAY2RGB); //pretend to be GRAY
-    } else {
-        cv::Mat empty_channel(src.rows, src.cols, src.type(), cv::Scalar(0, 0, 0));
-        channels[(channel_index + 1) % 3] = empty_channel;
-        channels[(channel_index + 2) % 3] = empty_channel;
 
-        cv::merge(channels, empty_temp);
+    cv::Mat output(src.rows, src.cols, CV_8UC3),
+            empty_channel(src.rows, src.cols, CV_8UC1, cv::Scalar(0.0)),
+            selected_channel = channels[input_channel];
+
+    switch (channel) {
+        case ChannelOption::ALL:
+            cv::cvtColor(selected_channel, output, cv::COLOR_GRAY2RGB); //pretend to be GRAY
+            break;
+        case ChannelOption::R:
+            {
+                std::array<cv::Mat, 3> new_channels = {selected_channel, empty_channel, empty_channel};
+
+                cv::merge(new_channels, output);
+            }
+            break;
+        case ChannelOption::G:
+            {
+                std::array<cv::Mat, 3> new_channels = {empty_channel, selected_channel, empty_channel};
+
+                cv::merge(new_channels, output);
+            }
+            break;
+        case ChannelOption::B:
+            {
+                std::array<cv::Mat, 3> new_channels = {empty_channel, empty_channel, selected_channel};
+
+                cv::merge(new_channels, output);
+            }
+            break;
     }
-    dst = std::move(empty_temp);
+
+    dst = std::move(output);
 }
 
 void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, const CompressionMode& mode) {
@@ -207,12 +229,12 @@ void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, const Compressi
         return;
     }
 
-    uint8_t max_value = mode;
+    const double max_value = mode;
     dst.forEach<Pixel>(
         [max_value](Pixel& pixel, const int*) -> void {
-            pixel[0] = max_value * pixel[0] / MAX_8BIT;
-            pixel[1] = max_value * pixel[1] / MAX_8BIT;
-            pixel[2] = max_value * pixel[2] / MAX_8BIT;
+            pixel[0] = pixel[0] * (max_value / MAX_8BIT);
+            pixel[1] = pixel[1] * (max_value / MAX_8BIT);
+            pixel[2] = pixel[2] * (max_value / MAX_8BIT);
         }
     );
 }
