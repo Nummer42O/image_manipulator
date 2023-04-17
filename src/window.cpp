@@ -14,7 +14,6 @@
  *  - add zooming functionality
  *  - add printing
  *  - add hue-, value-, saturation-scale images to show what value is what
- *  - add zoom functionality
  *  - look into hv_switch again, maybe another version? single button?
  *  - HSV presets
  *  - fix windowFinishSetup for moving?
@@ -120,9 +119,8 @@ Window::Window() {
     blocking_label->set_halign(Gtk::ALIGN_START);
     blocking_adjustment->pack_start(*blocking_label, Gtk::PACK_EXPAND_WIDGET);
 
-    Gtk::Switch* blocking_switch = Gtk::make_managed<Gtk::Switch>();
-    blocking_switch->signal_state_flags_changed().connect(sigc::mem_fun1(*this, &Window::hsvBlockChanged));
-    blocking_adjustment->pack_end(*blocking_switch, Gtk::PACK_SHRINK);
+    this->hsv_switch.signal_state_flags_changed().connect(sigc::mem_fun1(*this, &Window::hsvBlockChanged));
+    blocking_adjustment->pack_end(this->hsv_switch, Gtk::PACK_SHRINK);
     /* #endregion               block hsv adjustment*/
     /* #endregion           HSV manipulation */
 
@@ -485,8 +483,12 @@ void Window::switchEditingMode(Gtk::Widget*, guint page_number) {
     }
 }
 
-void Window::hsvBlockChanged(const Gtk::StateFlags& flags) {
-    this->hsv_blocked = (flags & Gtk::STATE_FLAG_CHECKED);
+void Window::hsvBlockChanged(const Gtk::StateFlags&) {
+    this->hsv_blocked = this->hsv_switch.get_state();
+
+    if (this->current_page_number == Pages::HSV && !this->hsv_blocked) {
+        this->applyHSVEdits();
+    }
 }
 
 void Window::windowFinishSetup() {

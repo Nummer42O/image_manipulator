@@ -95,7 +95,7 @@ class Window: public Gtk::Window {
          * 
          * @param flags: (new) state flags of the switch
         */
-        void hsvBlockChanged(const Gtk::StateFlags& flags);
+        void hsvBlockChanged(const Gtk::StateFlags&);
 
         /**
          * Callback to be called once when the window is first idling, ergo when Gtk completely finished its setup.
@@ -151,7 +151,7 @@ class Window: public Gtk::Window {
 
         // Gtk widgets to keep track of
         Gtk::Paned base, left_base;
-        Gtk::Switch hv_switch;
+        Gtk::Switch hv_switch, hsv_switch;
         Gtk::Label average_label;
 
 
