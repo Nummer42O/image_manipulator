@@ -14,7 +14,8 @@
  *  - look into hv_switch again, maybe another version? single button?
  *  - HSV presets
  *  - fix windowFinishSetup for moving?
- *  - average color display
+ *  - rework average color label -> export as image_proc:: function and beautify
+ *  - make compression als scale with 8, 4, 2, 1bit ticks?
 */
 
 Window::Window() {
