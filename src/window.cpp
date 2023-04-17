@@ -9,8 +9,12 @@
 #define SPACING         5
 #define SCALE_PADDING   20
 
-/* TODO:
- *  - fix image_proc::limitImageByHSV
+/** TODO:
+ *  - add open/save/print shortcut key binds
+ *  - add zooming functionality
+ *  - add printing
+ *  - add hue-, value-, saturation-scale images to show what value is what
+ *  - add zoom functionality
  *  - look into hv_switch again, maybe another version? single button?
  *  - HSV presets
  *  - fix windowFinishSetup for moving?
