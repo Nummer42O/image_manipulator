@@ -2,6 +2,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <string>
+
 namespace image_proc {
     /**
      * Make a copy of the image where the values of the HSV color space are restricted as given by the parameters.
@@ -98,5 +100,16 @@ namespace image_proc {
     bool saveImage(
         const cv::Mat& image,
         const std::string& filepath
+    );
+
+    /**
+     * Return a representation of the average color of the image.
+     * Format: "Red: {0} Green: {1} Blue: {3}"
+     * 
+     * @param image: image to take the mean from
+     * @return formatted mean string
+    */
+    std::string getAverageColorString(
+        const cv::Mat& image
     );
 }

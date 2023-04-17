@@ -485,9 +485,7 @@ void Window::applyHSVEdits() {
                                 hue_min, hue_max, sat_min, sat_max, val_min, val_max);
     image_proc::compressImage(temp, this->altered_image, this->current_compression_mode);
 
-    std::stringstream mean_string_stream;
-    mean_string_stream << cv::mean(this->altered_image);
-    this->average_label.set_text(mean_string_stream.str());
+    this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
     
     Window::convertCVtoGTK(this->altered_image, this->altered_image_widget);
 }
@@ -501,9 +499,7 @@ void Window::applyChannelEdits() {
     image_proc::manipulateChannels(this->original_image, temp, this->current_channel_modifier, this->current_channel_option);
     image_proc::compressImage(temp, this->altered_image, this->current_compression_mode);
 
-    std::stringstream mean_string_stream;
-    mean_string_stream << cv::mean(this->altered_image);
-    this->average_label.set_text(mean_string_stream.str());
+    this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
 
     Window::convertCVtoGTK(this->altered_image, this->altered_image_widget);
 }

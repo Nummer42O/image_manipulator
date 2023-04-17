@@ -257,3 +257,15 @@ bool image_proc::saveImage(const cv::Mat& image, const std::string& filepath) {
 
     return cv::imwrite(filepath, temp);
 }
+
+std::string image_proc::getAverageColorString(const cv::Mat& image) {
+    std::stringstream avg_color_string;
+
+    cv::Scalar average = cv::mean(image);
+    avg_color_string << std::fixed << std::setfill('0') << std::setprecision(2)
+                     <<   "R: " << average[0]
+                     << "\tG: " << average[1]
+                     << "\tB: " << average[2];
+
+    return avg_color_string.str();
+}
