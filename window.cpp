@@ -1,7 +1,6 @@
 #include "window.hpp"
 
 #include <iostream>
-#include <bitset>
 
 #define CREATE_MIN_ADJUSTMENT Gtk::Adjustment::create(0.0, 0.0, 255.0)
 #define CREATE_MAX_ADJUSTMENT Gtk::Adjustment::create(255.0, 0.0, 255.0)

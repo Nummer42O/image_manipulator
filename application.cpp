@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Application::Application(): Gtk::Application("my.app", Gio::APPLICATION_HANDLES_COMMAND_LINE) {}
+Application::Application(): Gtk::Application("image_manipulator.main", Gio::APPLICATION_HANDLES_COMMAND_LINE) {}
 Application::~Application() {
     if (this->window != nullptr) {
         delete this->window;
