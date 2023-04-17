@@ -10,6 +10,8 @@
 #define SCALE_PADDING   20
 
 /** TODO:
+ *  - add option to take altered image as original image -> apply?
+ *  - unsaved changes warning?
  *  - add open/save/print shortcut key binds
  *  - add zooming functionality
  *  - add printing
@@ -231,7 +233,7 @@ Window::Window() {
     /* #endregion           channel manipulation */
     /* #endregion       notebook */
 
-    /* #region          compression options */
+    /* #region          compression  */
     Gtk::Box* compression_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, SPACING);
     compression_box->set_border_width(SPACING);
     this->left_base.pack2(*compression_box, Gtk::EXPAND | Gtk::FILL);
@@ -241,34 +243,19 @@ Window::Window() {
     Gtk::Box* compression_modes_horizontal_align = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     compression_box->pack_start(*compression_modes_horizontal_align, Gtk::PACK_EXPAND_WIDGET);
 
-    Gtk::Box* compression_modes_vertical_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, SPACING);
-    compression_modes_horizontal_align->pack_start(*compression_modes_vertical_box, Gtk::PACK_EXPAND_PADDING);
-
-    Gtk::RadioButtonGroup compression_mode_group;
-
-    /* #region              options */
-    // 1 bit option
-    Gtk::RadioButton* one_bit_option = Gtk::make_managed<Gtk::RadioButton>(compression_mode_group, "1 bit");
-    one_bit_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::compressionModechange), image_proc::CompressionMode::ONE_BIT));
-    compression_modes_vertical_box->pack_start(*one_bit_option, Gtk::PACK_EXPAND_PADDING);
-    
-    // 2 bit option
-    Gtk::RadioButton* two_bit_option = Gtk::make_managed<Gtk::RadioButton>(compression_mode_group, "2 bit");
-    two_bit_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::compressionModechange), image_proc::CompressionMode::TWO_BIT));
-    compression_modes_vertical_box->pack_start(*two_bit_option, Gtk::PACK_EXPAND_PADDING);
-
-    // 4 bit option
-    Gtk::RadioButton* four_bit_option = Gtk::make_managed<Gtk::RadioButton>(compression_mode_group, "4 bit");
-    four_bit_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::compressionModechange), image_proc::CompressionMode::FOUR_BIT));
-    compression_modes_vertical_box->pack_start(*four_bit_option, Gtk::PACK_EXPAND_PADDING);
-
-    // 8 bit / normal option
-    Gtk::RadioButton* normal_option = Gtk::make_managed<Gtk::RadioButton>(compression_mode_group, "8 bit");
-    normal_option->signal_clicked().connect(sigc::bind(sigc::mem_fun1(*this, &Window::compressionModechange), image_proc::CompressionMode::NORMAL));
-    normal_option->set_active();
-    compression_modes_vertical_box->pack_start(*normal_option, Gtk::PACK_EXPAND_PADDING);
-    /* #endregion           options*/
-    /* #endregion       compression options */
+    this->compression_level_adj = Gtk::Adjustment::create(8.0, 1.0, 8.0, .1, 1.0);
+    this->compression_level_adj->signal_value_changed().connect(sigc::mem_fun0(*this, &Window::compressionModechange));
+    Gtk::Scale* compression_level = Gtk::make_managed<Gtk::Scale>(this->compression_level_adj, Gtk::ORIENTATION_VERTICAL);
+    compression_level->set_has_origin(false);
+    compression_level->set_digits(2);
+    compression_level->set_value_pos(Gtk::POS_LEFT);
+    compression_level->add_mark(1.0, Gtk::POS_RIGHT, "1.0");
+    compression_level->add_mark(2.0, Gtk::POS_RIGHT, "2.0");
+    compression_level->add_mark(4.0, Gtk::POS_RIGHT, "4.0");
+    compression_level->add_mark(8.0, Gtk::POS_RIGHT, "8.0 (default)");
+    compression_level->set_size_request(-1, 200);
+    compression_modes_horizontal_align->pack_start(*compression_level, Gtk::PACK_EXPAND_PADDING);
+    /* #endregion       compression  */
     /* #endregion   config side (left)*/
 
     /* #region      image side (right) */
@@ -435,8 +422,8 @@ void Window::changeValueAdjustment(bool is_max) {
     }
 }
 
-void Window::compressionModechange(const image_proc::CompressionMode& mode) {
-    this->current_compression_mode = mode;
+void Window::compressionModechange() {
+    this->current_compression_level = this->compression_level_adj->get_value();
 
     if (this->current_page_number == Pages::HSV) {
         if (this->hsv_blocked) {
@@ -517,7 +504,7 @@ void Window::applyHSVEdits() {
     cv::Mat temp;
     image_proc::limitImageByHSV(this->original_image, temp,
                                 hue_min, hue_max, sat_min, sat_max, val_min, val_max);
-    image_proc::compressImage(temp, this->altered_image, this->current_compression_mode);
+    image_proc::compressImage(temp, this->altered_image, this->current_compression_level);
 
     this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
     
@@ -531,7 +518,7 @@ void Window::applyChannelEdits() {
 
     cv::Mat temp;
     image_proc::manipulateChannels(this->original_image, temp, this->current_channel_modifier, this->current_channel_option);
-    image_proc::compressImage(temp, this->altered_image, this->current_compression_mode);
+    image_proc::compressImage(temp, this->altered_image, this->current_compression_level);
 
     this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
 

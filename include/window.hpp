@@ -10,6 +10,7 @@ class Window: public Gtk::Window {
          * Initialize the main window by setting up the widgets.
         */
         Window();
+        ~Window() noexcept {}
         
         
         /**
@@ -51,11 +52,9 @@ class Window: public Gtk::Window {
         void changeValueAdjustment(bool is_max);
 
         /**
-         * Callback for a change in the compression mode group.
-         * 
-         * @param mode: new mode to be set
+         * Callback for a change in the compression level.
         */
-        void compressionModechange(const image_proc::CompressionMode& mode);
+        void compressionModechange();
 
         /**
          * Callback for a change in the image orientation.
@@ -145,14 +144,15 @@ class Window: public Gtk::Window {
         };
         image_proc::ModifierOption  current_channel_modifier;
         image_proc::ChannelOption   current_channel_option;
-        image_proc::CompressionMode current_compression_mode;
         guint                       current_page_number;
+        double                      current_compression_level = 8.0;
 
 
         // Gtk widgets to keep track of
         Gtk::Paned base, left_base;
         Gtk::Switch hv_switch, hsv_switch;
         Gtk::Label average_label;
+        Glib::RefPtr<Gtk::Adjustment> compression_level_adj;
 
 
         // image handling

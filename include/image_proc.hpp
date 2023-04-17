@@ -56,24 +56,17 @@ namespace image_proc {
     );
 
 
-    enum CompressionMode {
-        ONE_BIT = 0b1,
-        TWO_BIT = 0b11,
-        FOUR_BIT = 0b1111,
-        NORMAL = 0
-    };
-
     /**
      * Compress image (with losses) to lower bits per channel per pixel.
      * 
      * @param src: source image
      * @param dst: output image (will be overwritten)
-     * @param mode: level of compression
+     * @param compression_level: level of compression from 1 bit to 8 bits
     */
     void compressImage(
         const cv::Mat& src,
         cv::Mat& dst,
-        const CompressionMode& mode
+        double compression_level
     );
 
 

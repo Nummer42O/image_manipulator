@@ -225,19 +225,23 @@ void image_proc::manipulateChannels(const cv::Mat& src, cv::Mat& dst, const Modi
     dst = std::move(output);
 }
 
-void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, const CompressionMode& mode) {
+void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, double compression_level) {
     src.copyTo(dst);
 
-    if (mode == CompressionMode::NORMAL) {
+    if (compression_level == 8.0) {
         return;
     }
 
-    const double max_value = mode;
+    // const uint8_t max_value = compression_level;
     dst.forEach<Pixel>(
-        [max_value](Pixel& pixel, const int*) -> void {
-            pixel[0] = static_cast<uint8_t>(pixel[0] * (max_value / MAX_8BIT)) * MAX_8BIT / static_cast<uint8_t>(max_value);
-            pixel[1] = static_cast<uint8_t>(pixel[1] * (max_value / MAX_8BIT)) * MAX_8BIT / static_cast<uint8_t>(max_value);
-            pixel[2] = static_cast<uint8_t>(pixel[2] * (max_value / MAX_8BIT)) * MAX_8BIT / static_cast<uint8_t>(max_value);
+        [compression_level](Pixel& pixel, const int*) -> void {
+            uint8_t pixel_0 = pixel[0] * (compression_level / MAX_8BIT),
+                    pixel_1 = pixel[1] * (compression_level / MAX_8BIT),
+                    pixel_2 = pixel[2] * (compression_level / MAX_8BIT);
+
+            pixel[0] = pixel_0 * MAX_8BIT / compression_level; //max_value;
+            pixel[1] = pixel_1 * MAX_8BIT / compression_level; //max_value;
+            pixel[2] = pixel_2 * MAX_8BIT / compression_level; //max_value;
         }
     );
 }
