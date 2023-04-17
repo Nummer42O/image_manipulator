@@ -14,14 +14,13 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-3.0 glibmm-2.4)
 
 file(GLOB SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-)
-
-file(GLOB HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
 add_executable(test ${SOURCES} ${HEADERS})
 target_link_libraries(test PRIVATE ${GTKMM_LIBRARIES} ${OpenCV_LIBS})
-target_include_directories(test PRIVATE ${GTKMM_INCLUDE_DIRS})
+target_include_directories(test
+    PRIVATE ${GTKMM_INCLUDE_DIRS}
+    PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 target_link_directories(test PRIVATE ${GTKMM_LIBRARY_DIRS})
