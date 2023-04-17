@@ -6,14 +6,14 @@
 
 void image_proc::limitImageByHSV(const cv::Mat& src, cv::Mat& dst, double hue_bottom, double hue_top, double sat_bottom, double sat_top, double val_bottom, double val_top) {
     //make the "base" grayscale
-    //cv::cvtColor(src, dst, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(src, dst, cv::COLOR_RGB2GRAY);
 
     //make a mask for the areas which are within the given ranges
     cv::Scalar lower_boundary(hue_bottom, sat_bottom, val_bottom),
                upper_boundary(hue_top, sat_top, val_top);
     cv::Mat mask, temp;
     cv::cvtColor(src, temp, cv::COLOR_RGB2HSV_FULL);
-    cv::inRange(temp, lower_boundary, upper_boundary, dst);
+    cv::inRange(temp, lower_boundary, upper_boundary, mask);
 
     //use the mask to add color back in to the image
     cv::copyTo(src, dst, mask);

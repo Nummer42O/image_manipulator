@@ -10,11 +10,10 @@
 #define SCALE_PADDING   20
 
 /* TODO:
- *  - fix seg fault when slider activation -> sigc::ref?
+ *  - fix image_proc::limitImageByHSV
  *  - look into hv_switch again, maybe another version? single button?
  *  - HSV presets
  *  - fix windowFinishSetup for moving?
- *  - rework average color label -> export as image_proc:: function and beautify
  *  - make compression als scale with 8, 4, 2, 1bit ticks?
 */
 
@@ -49,14 +48,14 @@ Window::Window() {
     
     // min
     this->hue_min_adj = CREATE_MIN_ADJUSTMENT;
-    this->hue_min_adj->signal_value_changed().connect(sigc::bind(sigc::ptr_fun3(&Window::changedMinAdjustment), this->hue_blocked, this->hue_min_adj, this->hue_max_adj));
+    this->hue_min_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeHueAdjustment), false));
     Gtk::Scale* hue_min = Gtk::make_managed<Gtk::Scale>(this->hue_min_adj, Gtk::ORIENTATION_VERTICAL);
     hue_min->set_inverted();
     hue_adjustment->pack_start(*hue_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
     // max
     this->hue_max_adj = CREATE_MAX_ADJUSTMENT;
-    this->hue_max_adj->signal_value_changed().connect(sigc::bind(sigc::ptr_fun3(&Window::changedMaxAdjustment), this->hue_blocked, this->hue_min_adj, this->hue_max_adj));
+    this->hue_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeHueAdjustment), true));
     Gtk::Scale* hue_max = Gtk::make_managed<Gtk::Scale>(this->hue_max_adj, Gtk::ORIENTATION_VERTICAL);
     hue_max->set_inverted();
     hue_adjustment->pack_start(*hue_max, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
@@ -72,14 +71,14 @@ Window::Window() {
     
     // min
     this->sat_min_adj = CREATE_MIN_ADJUSTMENT;
-    this->sat_min_adj->signal_value_changed().connect(sigc::bind(sigc::ptr_fun3(&Window::changedMinAdjustment), this->sat_blocked, this->sat_min_adj, this->sat_max_adj));
+    this->sat_min_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeSaturationAdjustment), false));
     Gtk::Scale* sat_min = Gtk::make_managed<Gtk::Scale>(this->sat_min_adj, Gtk::ORIENTATION_VERTICAL);
     sat_min->set_inverted();
     sat_adjustment->pack_start(*sat_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
     // max
     this->sat_max_adj = CREATE_MAX_ADJUSTMENT;
-    this->sat_max_adj->signal_value_changed().connect(sigc::bind(sigc::ptr_fun3(&Window::changedMaxAdjustment), this->sat_blocked, this->sat_min_adj, this->sat_max_adj));
+    this->sat_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeSaturationAdjustment), true));
     Gtk::Scale* sat_max = Gtk::make_managed<Gtk::Scale>(this->sat_max_adj, Gtk::ORIENTATION_VERTICAL);
     sat_max->set_inverted();
     sat_adjustment->pack_start(*sat_max, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
@@ -95,14 +94,14 @@ Window::Window() {
     
     // min
     this->val_min_adj = CREATE_MIN_ADJUSTMENT;
-    this->val_min_adj->signal_value_changed().connect(sigc::bind(sigc::ptr_fun3(&Window::changedMinAdjustment), this->val_blocked, this->val_min_adj, this->val_max_adj));
+    this->val_min_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeValueAdjustment), false));
     Gtk::Scale* val_min = Gtk::make_managed<Gtk::Scale>(this->val_min_adj, Gtk::ORIENTATION_VERTICAL);
     val_min->set_inverted();
     val_adjustment->pack_start(*val_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
     // max
     this->val_max_adj = CREATE_MAX_ADJUSTMENT;
-    this->val_max_adj->signal_value_changed().connect(sigc::bind(sigc::ptr_fun3(&Window::changedMaxAdjustment), this->val_blocked, this->val_min_adj, this->val_max_adj));
+    this->val_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeValueAdjustment), true));
     Gtk::Scale* val_max = Gtk::make_managed<Gtk::Scale>(this->val_max_adj, Gtk::ORIENTATION_VERTICAL);
     val_max->set_inverted();
     val_adjustment->pack_start(*val_max, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
@@ -371,37 +370,66 @@ void Window::convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst) {
     dst.set(image_buffer);
 }
 
-void Window::changedMaxAdjustment(bool& blocked, const Glib::RefPtr<Gtk::Adjustment>& min_adj, const Glib::RefPtr<Gtk::Adjustment>& max_adj) {
-    assert(!min_adj && !max_adj);
+void Window::changeHueAdjustment(bool is_max) {
+    if (!this->hue_blocked) {
+        this->hue_blocked = true;
 
-    if (!blocked) {
-        blocked = true;
+        double max_value = this->hue_max_adj->get_value(),
+               min_value = this->hue_min_adj->get_value();
 
-        double max_value = max_adj->get_value(),
-               min_value = min_adj->get_value();
-
-        if (min_value > max_value) {
-            min_adj->set_value(max_value);
+        if (is_max && min_value > max_value) {
+            this->hue_min_adj->set_value(max_value);
+        } else if (!is_max && max_value < min_value) {
+            this->hue_max_adj->set_value(min_value);
         }
 
-        blocked = false;
+        if (!this->hsv_blocked) {
+            this->applyHSVEdits();
+        }
+
+        this->hue_blocked = false;
     }
 }
 
-void Window::changedMinAdjustment(bool& blocked, const Glib::RefPtr<Gtk::Adjustment>& min_adj, const Glib::RefPtr<Gtk::Adjustment>& max_adj) {
-    assert(!min_adj && !max_adj);
+void Window::changeSaturationAdjustment(bool is_max) {
+    if (!this->sat_blocked) {
+        this->sat_blocked = true;
 
-    if (!blocked) {
-        blocked = true;
+        double max_value = this->sat_max_adj->get_value(),
+               min_value = this->sat_min_adj->get_value();
 
-        double min_value = min_adj->get_value(),
-               max_value = max_adj->get_value();
-
-        if (max_value < min_value) {
-            max_adj->set_value(min_value);
+        if (is_max && min_value > max_value) {
+            this->sat_min_adj->set_value(max_value);
+        } else if (!is_max && max_value < min_value) {
+            this->sat_max_adj->set_value(min_value);
         }
 
-        blocked = false;
+        if (!this->hsv_blocked) {
+            this->applyHSVEdits();
+        }
+
+        this->sat_blocked = false;
+    }
+}
+
+void Window::changeValueAdjustment(bool is_max) {
+    if (!this->val_blocked) {
+        this->val_blocked = true;
+
+        double max_value = this->val_max_adj->get_value(),
+               min_value = this->val_min_adj->get_value();
+
+        if (is_max && min_value > max_value) {
+            this->val_min_adj->set_value(max_value);
+        } else if (!is_max && max_value < min_value) {
+            this->val_max_adj->set_value(min_value);
+        }
+
+        if (!this->hsv_blocked) {
+            this->applyHSVEdits();
+        }
+
+        this->val_blocked = false;
     }
 }
 

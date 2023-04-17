@@ -30,25 +30,25 @@ class Window: public Gtk::Window {
 
 
         /**
-         * Callback for when a maximum scale gets adjusted.
-         * This will lower then minimum value, if it is above the new maximum.
+         * Callback to change hue adjustments so that min <= max.
          * 
-         * @param blocked: blocker variable to inhibit changedMinAdjustemtn to be called, when the min value gets adjusted
-         * @param min_adj: reference to the minimum adjustment to get and set values
-         * @param max_adj: reference to the maximum adjustment to get and set values 
+         * @param is_max: wether max was changed, false indicates that min was changed
         */
-        static void changedMaxAdjustment(bool& blocked, const Glib::RefPtr<Gtk::Adjustment>& min_adj, const Glib::RefPtr<Gtk::Adjustment>& max_adj);
+        void changeHueAdjustment(bool is_max);
 
         /**
-         * Callback for when a minimum scale gets adjusted.
-         * This will raise then maximum value, if it is below the new minimum.
+         * Callback to change hue adjustments so that min <= max.
          * 
-         * @param blocked: blocker variable to inhibit changedMinAdjustemtn to be called, when the min value gets adjusted
-         * @param min_adj: reference to the minimum adjustment to get and set values
-         * @param max_adj: reference to the maximum adjustment to get and set values 
+         * @param is_max: wether max was changed, false indicates that min was changed
         */
-        static void changedMinAdjustment(bool& blocked, const Glib::RefPtr<Gtk::Adjustment>& min_adj, const Glib::RefPtr<Gtk::Adjustment>& max_adj);
-        
+        void changeSaturationAdjustment(bool is_max);
+
+        /**
+         * Callback to change hue adjustments so that min <= max.
+         * 
+         * @param is_max: wether max was changed, false indicates that min was changed
+        */
+        void changeValueAdjustment(bool is_max);
 
         /**
          * Callback for a change in the compression mode group.
