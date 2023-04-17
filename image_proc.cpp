@@ -232,9 +232,9 @@ void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, const Compressi
     const double max_value = mode;
     dst.forEach<Pixel>(
         [max_value](Pixel& pixel, const int*) -> void {
-            pixel[0] = pixel[0] * (max_value / MAX_8BIT);
-            pixel[1] = pixel[1] * (max_value / MAX_8BIT);
-            pixel[2] = pixel[2] * (max_value / MAX_8BIT);
+            pixel[0] = static_cast<uint8_t>(pixel[0] * (max_value / MAX_8BIT)) * MAX_8BIT / static_cast<uint8_t>(max_value);
+            pixel[1] = static_cast<uint8_t>(pixel[1] * (max_value / MAX_8BIT)) * MAX_8BIT / static_cast<uint8_t>(max_value);
+            pixel[2] = static_cast<uint8_t>(pixel[2] * (max_value / MAX_8BIT)) * MAX_8BIT / static_cast<uint8_t>(max_value);
         }
     );
 }
