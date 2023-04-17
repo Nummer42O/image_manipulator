@@ -152,6 +152,7 @@ class Window: public Gtk::Window {
         // Gtk widgets to keep track of
         Gtk::Paned base, left_base;
         Gtk::Switch hv_switch;
+        Gtk::Label average_label;
 
 
         // image handling

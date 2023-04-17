@@ -1,6 +1,7 @@
 #include "window.hpp"
 
 #include <iostream>
+#include <string>
 
 #define CREATE_MIN_ADJUSTMENT Gtk::Adjustment::create(0.0, 0.0, 255.0)
 #define CREATE_MAX_ADJUSTMENT Gtk::Adjustment::create(255.0, 0.0, 255.0)
@@ -294,6 +295,8 @@ Window::Window() {
     //TODO
     /* #endregion           buttons */
 
+    utility_bar->pack_start(this->average_label, Gtk::PACK_EXPAND_PADDING);
+
     /* #region              horizontal vertical switch */
     Gtk::Box* hv_switch_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
     utility_bar->pack_end(*hv_switch_box, Gtk::PACK_SHRINK);
@@ -480,6 +483,10 @@ void Window::applyHSVEdits() {
     image_proc::limitImageByHSV(this->original_image, temp,
                                 hue_min, hue_max, sat_min, sat_max, val_min, val_max);
     image_proc::compressImage(temp, this->altered_image, this->current_compression_mode);
+
+    std::stringstream mean_string_stream;
+    mean_string_stream << cv::mean(this->altered_image);
+    this->average_label.set_text(mean_string_stream.str());
     
     Window::convertCVtoGTK(this->altered_image, this->altered_image_widget);
 }
@@ -492,6 +499,10 @@ void Window::applyChannelEdits() {
     cv::Mat temp;
     image_proc::manipulateChannels(this->original_image, temp, this->current_channel_modifier, this->current_channel_option);
     image_proc::compressImage(temp, this->altered_image, this->current_compression_mode);
+
+    std::stringstream mean_string_stream;
+    mean_string_stream << cv::mean(this->altered_image);
+    this->average_label.set_text(mean_string_stream.str());
 
     Window::convertCVtoGTK(this->altered_image, this->altered_image_widget);
 }
