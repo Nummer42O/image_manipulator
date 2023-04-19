@@ -6,124 +6,30 @@
 #include <map>
 
 namespace image_proc {
-    const std::map<std::array<std::string, 2>, std::vector<std::array<std::string, 2>>> conversion_constraints = {
-//         ('BGR', ''): ('BGRA', '')
-//              ('RGBA', '')
-//              ('RGB', '')
-//              ('GRAY', '')
-//              ('BGR565', '')
-//              ('BGR555', '')
-//              ('XYZ', '')
-//              ('YCrCb', '')
-//              ('HSV', '')
-//              ('Lab', '')
-//              ('Luv', '')
-//              ('HLS', '')
-//              ('HSV', 'FULL')
-//              ('HLS', 'FULL')
-//              ('YUV', '')
-//              ('YUV', 'I420')
-//              ('YUV', 'YV12')
-// ('BGRA', ''): ('BGR', '')
-//               ('RGBA', '')
-//               ('GRAY', '')
-//               ('BGR565', '')
-//               ('BGR555', '')
-//               ('YUV', 'I420')
-//               ('YUV', 'YV12')
-// ('RGBA', ''): ('BGR', '')
-//               ('GRAY', '')
-//               ('BGR565', '')
-//               ('BGR555', '')
-//               ('mRGBA', '')
-//               ('YUV', 'I420')
-//               ('YUV', 'YV12')
-// ('RGB', ''): ('GRAY', '')
-//              ('BGR565', '')
-//              ('BGR555', '')
-//              ('XYZ', '')
-//              ('YCrCb', '')
-//              ('HSV', '')
-//              ('Lab', '')
-//              ('Luv', '')
-//              ('HLS', '')
-//              ('HSV', 'FULL')
-//              ('HLS', 'FULL')
-//              ('YUV', '')
-//              ('YUV', 'I420')
-//              ('YUV', 'YV12')
-// ('GRAY', ''): ('BGR', '')
-//               ('BGRA', '')
-//               ('BGR565', '')
-//               ('BGR555', '')
-// ('BGR565', ''): ('BGR', '')
-//                 ('RGB', '')
-//                 ('BGRA', '')
-//                 ('RGBA', '')
-//                 ('GRAY', '')
-// ('BGR555', ''): ('BGR', '')
-//                 ('RGB', '')
-//                 ('BGRA', '')
-//                 ('RGBA', '')
-//                 ('GRAY', '')
-// ('XYZ', ''): ('BGR', '')
-//              ('RGB', '')
-// ('YCrCb', ''): ('BGR', '')
-//                ('RGB', '')
-// ('HSV', ''): ('BGR', '')
-//              ('RGB', '')
-//              ('BGR', 'FULL')
-//              ('RGB', 'FULL')
-// ('Lab', ''): ('BGR', '')
-//              ('RGB', '')
-//              ('LBGR', '')
-//              ('LRGB', '')
-// ('Luv', ''): ('BGR', '')
-//              ('RGB', '')
-//              ('LBGR', '')
-//              ('LRGB', '')
-// ('HLS', ''): ('BGR', '')
-//              ('RGB', '')
-//              ('BGR', 'FULL')
-//              ('RGB', 'FULL')
-// ('LBGR', ''): ('Lab', '')
-//               ('Luv', '')
-// ('LRGB', ''): ('Lab', '')
-//               ('Luv', '')
-// ('YUV', ''): ('BGR', '')
-//              ('RGB', '')
-// ('YUV', 'NV12'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-// ('YUV', 'NV21'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-// ('YUV', 'YV12'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-// ('YUV', 'IYUV'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-// ('YUV', '420'): ('GRAY', '')
-// ('YUV', 'UYVY'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-//                  ('GRAY', '')
-// ('YUV', 'YUY2'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-//                  ('GRAY', '')
-// ('YUV', 'YVYU'): ('RGB', '')
-//                  ('BGR', '')
-//                  ('RGBA', '')
-//                  ('BGRA', '')
-// ('mRGBA', ''): ('RGBA', '')
+    enum ColorSpaces {
+        RGB = -1,               BGR,                    BGR565,                 BGR555,                 XYZ,
+        YCrCb,                  HSV,                    Lab,                    Luv,                    HLS,
+        HSV_FULL,               HLS_FULL,               YUV,                    YUV_I420,               YUV_YV12
+    };
+    const std::array<std::string, 15ul> color_space_names {
+        "RGB",                  "BGR",                  "BGR565",               "BGR555",               "XYZ",
+        "YCrCb",                "HSV",                  "Lab",                  "Luv",                  "HLS",
+        "HSV_FULL",             "HLS_FULL",             "YUV",                  "YUV_I420",             "YUV_YV12", 
+    };
+    const std::array<std::array<std::string, 3ul>, 15ul> color_space_channels {{
+        {{"R", "G", "B"}},      {{"B", "G", "R"}},      {{"B", "G", "R"}},      {{"B", "G", "R"}},      {{"X", "Y", "Z"}},
+        {{"Y", "Cr", "Cb"}},    {{"H", "S", "V"}},      {{"L", "a", "b"}},      {{"L", "u", "v"}},      {{"H", "L", "S"}},
+        {{"H", "S", "V"}},      {{"H", "L", "S"}},      {{"Y", "U", "V"}},      {{"Y", "U", "V"}},      {{"Y", "U", "V"}},
+    }};
+    const std::array<cv::ColorConversionCodes, 14ul> convert_from_rgb {
+                                cv::COLOR_RGB2BGR,      cv::COLOR_RGB2BGR565,   cv::COLOR_RGB2BGR555,   cv::COLOR_RGB2XYZ,
+        cv::COLOR_RGB2YCrCb,    cv::COLOR_RGB2HSV,      cv::COLOR_RGB2Lab,      cv::COLOR_RGB2Luv,      cv::COLOR_RGB2HLS,
+        cv::COLOR_RGB2HSV_FULL, cv::COLOR_RGB2HLS_FULL, cv::COLOR_RGB2YUV,      cv::COLOR_RGB2YUV_I420, cv::COLOR_RGB2YUV_YV12,
+    };
+    const std::array<cv::ColorConversionCodes, 14ul> convert_to_rgb {
+                                cv::COLOR_BGR2RGB,      cv::COLOR_BGR5652RGB,   cv::COLOR_BGR5552RGB,   cv::COLOR_XYZ2RGB,
+        cv::COLOR_YCrCb2RGB,    cv::COLOR_HSV2RGB,      cv::COLOR_Lab2RGB,      cv::COLOR_Luv2RGB,      cv::COLOR_HLS2RGB,
+        cv::COLOR_HSV2RGB_FULL, cv::COLOR_HLS2RGB_FULL, cv::COLOR_YUV2RGB,      cv::COLOR_YUV2RGB_I420, cv::COLOR_YUV2RGB_YV12,
     };
     
     /**
