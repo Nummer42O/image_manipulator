@@ -155,11 +155,12 @@ class Window: public Gtk::Window {
         Gtk::Label average_label;
         Glib::RefPtr<Gtk::Adjustment> compression_level_adj;
 
-        std::array<cv::Mat, NR_CHANNELS> channel_preview_matrices = {
-            cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
-            cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
-            cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
-        };
+        std::array<cv::Mat, NR_CHANNELS> channel_preview_matrix_references,
+                                         channel_preview_matrix_originals = {
+                                             cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
+                                             cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
+                                             cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
+                                         };
         std::array<Glib::RefPtr<Gdk::Pixbuf>, NR_CHANNELS> channel_preview_buffers;
 
         // image handling

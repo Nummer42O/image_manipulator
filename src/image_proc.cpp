@@ -4,6 +4,26 @@
 
 #define MAX_8BIT 0xFF
 
+
+void image_proc::initScalePreviews(const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrices) {
+    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
+        channel_preview_matrices[i].forEach<Pixel>(
+            [i](Pixel& pixel, const int* position) {
+                pixel[i] = *position;
+            }
+        );
+    }
+}
+
+void image_proc::convertScalePreviewColorSpaces(const std::array<const cv::Mat, NR_CHANNELS>& channel_preview_matrix_originals, const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_references, const ColorSpace& color_space) {
+    cv::ColorConversionCodes color_conversion_code = image_proc::convert_from_rgb[color_space];
+
+    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
+        cv::cvtColor(channel_preview_matrix_originals[i], channel_preview_matrix_references, color_conversion_code);
+    }
+}
+
+
 void image_proc::limitImageByHSV(const cv::Mat& src, cv::Mat& dst, double hue_bottom, double hue_top, double sat_bottom, double sat_top, double val_bottom, double val_top) {
     //make a mask for the areas which are within the given ranges
     cv::Scalar lower_boundary(hue_bottom, sat_bottom, val_bottom),

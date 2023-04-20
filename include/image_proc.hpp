@@ -5,32 +5,56 @@
 #include <string>
 #include <map>
 
+#define NR_CHANNELS 3ul
+
 namespace image_proc {
-    enum ColorSpaces {
+    enum ColorSpace {
         RGB = -1,               BGR,                    BGR565,                 BGR555,                 XYZ,
-        YCrCb,                  HSV,                    Lab,                    Luv,                    HLS,
-        HSV_FULL,               HLS_FULL,               YUV,                    YUV_I420,               YUV_YV12
+        YCrCb,                  Lab,                    Luv,                    HSV,                    HLS,
+        YUV,                    YUV_I420,               YUV_YV12
     };
-    const std::array<std::string, 15ul> color_space_names {
+    const std::array<std::string, 13ul> color_space_names {
         "RGB",                  "BGR",                  "BGR565",               "BGR555",               "XYZ",
-        "YCrCb",                "HSV",                  "Lab",                  "Luv",                  "HLS",
-        "HSV_FULL",             "HLS_FULL",             "YUV",                  "YUV_I420",             "YUV_YV12", 
+        "YCrCb",                "Lab",                  "Luv",                  "HSV",                  "HLS",
+        "YUV",                  "YUV_I420",             "YUV_YV12",
     };
-    const std::array<std::array<std::string, 3ul>, 15ul> color_space_channels {{
+    const std::array<std::array<std::string, NR_CHANNELS>, 13ul> color_space_channels {{
         {{"R", "G", "B"}},      {{"B", "G", "R"}},      {{"B", "G", "R"}},      {{"B", "G", "R"}},      {{"X", "Y", "Z"}},
-        {{"Y", "Cr", "Cb"}},    {{"H", "S", "V"}},      {{"L", "a", "b"}},      {{"L", "u", "v"}},      {{"H", "L", "S"}},
-        {{"H", "S", "V"}},      {{"H", "L", "S"}},      {{"Y", "U", "V"}},      {{"Y", "U", "V"}},      {{"Y", "U", "V"}},
+        {{"Y", "Cr", "Cb"}},    {{"L", "a", "b"}},      {{"L", "u", "v"}},      {{"H", "S", "V"}},      {{"H", "L", "S"}},
+        {{"Y", "U", "V"}},      {{"Y", "U", "V"}},      {{"Y", "U", "V"}},
     }};
-    const std::array<cv::ColorConversionCodes, 14ul> convert_from_rgb {
+    const std::array<cv::ColorConversionCodes, 12ul> convert_from_rgb {
                                 cv::COLOR_RGB2BGR,      cv::COLOR_RGB2BGR565,   cv::COLOR_RGB2BGR555,   cv::COLOR_RGB2XYZ,
-        cv::COLOR_RGB2YCrCb,    cv::COLOR_RGB2HSV,      cv::COLOR_RGB2Lab,      cv::COLOR_RGB2Luv,      cv::COLOR_RGB2HLS,
-        cv::COLOR_RGB2HSV_FULL, cv::COLOR_RGB2HLS_FULL, cv::COLOR_RGB2YUV,      cv::COLOR_RGB2YUV_I420, cv::COLOR_RGB2YUV_YV12,
+        cv::COLOR_RGB2YCrCb,    cv::COLOR_RGB2Lab,      cv::COLOR_RGB2Luv,      cv::COLOR_RGB2HSV_FULL, cv::COLOR_RGB2HLS_FULL,
+        cv::COLOR_RGB2YUV,      cv::COLOR_RGB2YUV_I420, cv::COLOR_RGB2YUV_YV12,
     };
-    const std::array<cv::ColorConversionCodes, 14ul> convert_to_rgb {
+    const std::array<cv::ColorConversionCodes, 12ul> convert_to_rgb {
                                 cv::COLOR_BGR2RGB,      cv::COLOR_BGR5652RGB,   cv::COLOR_BGR5552RGB,   cv::COLOR_XYZ2RGB,
-        cv::COLOR_YCrCb2RGB,    cv::COLOR_HSV2RGB,      cv::COLOR_Lab2RGB,      cv::COLOR_Luv2RGB,      cv::COLOR_HLS2RGB,
-        cv::COLOR_HSV2RGB_FULL, cv::COLOR_HLS2RGB_FULL, cv::COLOR_YUV2RGB,      cv::COLOR_YUV2RGB_I420, cv::COLOR_YUV2RGB_YV12,
+        cv::COLOR_YCrCb2RGB,    cv::COLOR_Lab2RGB,      cv::COLOR_Luv2RGB,      cv::COLOR_HSV2RGB_FULL, cv::COLOR_HLS2RGB_FULL,
+        cv::COLOR_YUV2RGB,      cv::COLOR_YUV2RGB_I420, cv::COLOR_YUV2RGB_YV12,
     };
+
+    /**
+     * Initialize the image buffers for the scale preview images.
+     * 
+     * @param channel_preview_matrices: array of matrices for channel previews
+    */
+    void initScalePreviews(
+        const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrices
+    );
+    
+    /**
+     * Convert preview matrices into their respective color space.
+     * 
+     * @param channel_preview_matrix_originals: original preview images to be converted
+     * @param channel_preview_matrix_references: destination images
+    */
+    void convertScalePreviewColorSpaces(
+        const std::array<const cv::Mat, NR_CHANNELS>& channel_preview_matrix_originals,
+        const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_references,
+        const ColorSpace& color_space
+    );
+
     
     /**
      * Make a copy of the image where the values of the HSV color space are restricted as given by the parameters.
