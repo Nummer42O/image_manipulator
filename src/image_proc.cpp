@@ -15,11 +15,11 @@ void image_proc::initScalePreviews(const std::array<cv::Mat, NR_CHANNELS>& chann
     }
 }
 
-void image_proc::convertScalePreviewColorSpaces(const std::array<const cv::Mat, NR_CHANNELS>& channel_preview_matrix_originals, const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_references, const ColorSpace& color_space) {
+void image_proc::convertScalePreviewColorSpaces(const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_originals, const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_references, const ColorSpace& color_space) {
     cv::ColorConversionCodes color_conversion_code = image_proc::convert_from_rgb[color_space];
 
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        cv::cvtColor(channel_preview_matrix_originals[i], channel_preview_matrix_references, color_conversion_code);
+        cv::cvtColor(channel_preview_matrix_originals[i], channel_preview_matrix_references[i], color_conversion_code);
     }
 }
 

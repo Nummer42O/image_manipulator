@@ -24,6 +24,8 @@
 Window::Window() {
     this->set_title("Image Manipulator");
 
+    image_proc::initScalePreviews(this->channel_preview_matrix_originals);
+
     this->base.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
     this->base.set_wide_handle();
     this->add(base);
@@ -42,8 +44,11 @@ Window::Window() {
     hsv_adjustments->set_border_width(5);
     editing_notebook->append_page(*hsv_adjustments, "_HSV", true);
 
+    //TEMP!!!
+    this->setPreviews();
+
     /* #region                  hue */
-    Gtk::Frame* hue_frame = Gtk::make_managed<Gtk::Frame>(" Hue ");
+    Gtk::Frame* hue_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space + 1][0]);
     hsv_adjustments->pack_start(*hue_frame, Gtk::PACK_EXPAND_WIDGET);
 
     Gtk::Box* hue_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
@@ -57,6 +62,9 @@ Window::Window() {
     hue_min->set_inverted();
     hue_adjustment->pack_start(*hue_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
+    // preview
+    hue_adjustment->pack_start(this->channel_preview_images[0], Gtk::PACK_SHRINK);
+
     // max
     this->hue_max_adj = CREATE_MAX_ADJUSTMENT;
     this->hue_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeHueAdjustment), true));
@@ -66,7 +74,7 @@ Window::Window() {
     /* #endregion               hue */
 
     /* #region                  saturation */
-    Gtk::Frame* sat_frame = Gtk::make_managed<Gtk::Frame>(" Saturation ");
+    Gtk::Frame* sat_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space + 1][1]);
     hsv_adjustments->pack_start(*sat_frame, Gtk::PACK_EXPAND_WIDGET);
 
     Gtk::Box* sat_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
@@ -89,7 +97,7 @@ Window::Window() {
     /* #endregion               saturation */
 
     /* #region                  value */
-    Gtk::Frame* val_frame = Gtk::make_managed<Gtk::Frame>(" Value ");
+    Gtk::Frame* val_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space + 1][2]);
     hsv_adjustments->pack_start(*val_frame, Gtk::PACK_EXPAND_WIDGET);
 
     Gtk::Box* val_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
@@ -621,5 +629,14 @@ void Window::loadImage() {
         } else {
             this->applyChannelEdits();
         }
+    }
+}
+
+void Window::setPreviews() {
+    image_proc::convertScalePreviewColorSpaces(this->channel_preview_matrix_originals, this->channel_preview_matrix_references, this->current_color_space);
+
+    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
+        Glib::RefPtr<Gdk::Pixbuf> buffer = Gdk::Pixbuf::create_from_data(this->channel_preview_matrix_references[i].data, Gdk::COLORSPACE_RGB, false, 8, this->channel_preview_matrix_references[i].cols, this->channel_preview_matrix_references[i].rows, this->channel_preview_matrix_references[i].step);
+        this->channel_preview_images[i].set(buffer);
     }
 }

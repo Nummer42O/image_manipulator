@@ -127,6 +127,11 @@ class Window: public Gtk::Window {
         */
         void loadImage();
 
+        /**
+         * Set preview images for color space.
+        */
+        void setPreviews();
+
 
         // HSV
         Glib::RefPtr<Gtk::Adjustment> hue_max_adj, hue_min_adj,
@@ -143,6 +148,7 @@ class Window: public Gtk::Window {
             HSV = 0,
             CHANNELS = 1
         };
+        image_proc::ColorSpace      current_color_space = image_proc::ColorSpace::RGB; //only temp
         image_proc::ModifierOption  current_channel_modifier;
         image_proc::ChannelOption   current_channel_option;
         guint                       current_page_number;
@@ -161,7 +167,7 @@ class Window: public Gtk::Window {
                                              cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
                                              cv::Mat(1, 255, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0)),
                                          };
-        std::array<Glib::RefPtr<Gdk::Pixbuf>, NR_CHANNELS> channel_preview_buffers;
+        std::array<Gtk::Image, NR_CHANNELS> channel_preview_images;
 
         // image handling
         Gtk::Box   images_box;        
