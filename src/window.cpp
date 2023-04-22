@@ -45,7 +45,6 @@ Window::Window() {
     //TEMP!!!
     this->setPreviews();
 
-    /* #region                  hue */
     for (size_t i = 0; i < NR_CHANNELS; i++) {
         Gtk::Frame* channel_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space][0]);
         hsv_adjustments->pack_start(*channel_frame, Gtk::PACK_EXPAND_WIDGET);
@@ -73,7 +72,6 @@ Window::Window() {
         max_scale->set_inverted();
         adjustments_box->pack_start(*max_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
     }
-    /* #endregion               hue */
 
     /* #region                  block hsv adjustment */
     Gtk::Box* blocking_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
@@ -289,60 +287,8 @@ Window::Window() {
     this->show_all_children();
 }
 
-void Window::loadImage(const std::string& filepath) {
-    if (filepath.empty()) {
-        return;
-    }
-
-    // load initial image
-    if (!image_proc::loadImage(this->original_image, filepath)) {
-        Gtk::MessageDialog dialog(*this, "Failed to load initial image:", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
-        dialog.set_secondary_text(filepath);
-        dialog.run();
-    } else {
-        Window::convertCVtoGTK(this->original_image, this->original_image_widget);
-
-        if (this->current_page_number == Pages::LIMIT) {
-            if (this->direct_activation_blocked) {
-                return;
-            }
-
-            this->applyHSVEdits();
-        } else {
-            this->applyChannelEdits();
-        }
-    }
-}
-
-void Window::convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst) {
-    assert(src.data != NULL);
-
-    Glib::RefPtr<Gdk::Pixbuf> image_buffer = Gdk::Pixbuf::create_from_data(src.data, Gdk::COLORSPACE_RGB, false, 8, src.cols, src.rows, src.step);
-
-    dst.set(image_buffer);
-}
-
-void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
-    uint8_t blocked_mask = 1u << channel_idx;
-
-    // check if no adjustment synchronyzing is already in progress
-    if (!(this->channel_blocked_flags & blocked_mask)) {
-        // switch blocking for this channel on
-        this->channel_blocked_flags ^= blocked_mask;
-
-        size_t adjustments_idx = channel_idx * 2ul;
-        double min_value = this->adjustments[adjustments_idx]->get_value(),
-               max_value = this->adjustments[adjustments_idx + 1ul]->get_value();
-        
-        if (max_value < min_value) {
-            this->adjustments[adjustments_idx + static_cast<size_t>(called_from_min)]->set_value(min_value);
-        }
-
-        // switch blocking for this channel off
-        this->channel_blocked_flags ^= blocked_mask;
-    }
-}
-
+/* #region      signal handlers */
+/* #region          radio button signals */
 void Window::compressionModechange() {
     this->current_compression_level = this->compression_level_adj->get_value();
 
@@ -355,10 +301,6 @@ void Window::compressionModechange() {
     } else {
         this->applyChannelEdits();
     }
-}
-
-void Window::orientationChange(const Gtk::StateFlags&) {
-    this->images_box.set_orientation(this->hv_switch.get_state() ? Gtk::ORIENTATION_VERTICAL : Gtk::ORIENTATION_HORIZONTAL);
 }
 
 void Window::changeChannelManipulatorModifier(const image_proc::ModifierOption& option) {
@@ -375,6 +317,12 @@ void Window::changeChannelManipulatorChannel(const image_proc::ChannelOption& op
     if (this->current_page_number == Pages::CHANNELS) {
         this->applyChannelEdits();
     }
+}
+/* #endregion       radio button signals */
+
+/* #region          button signals */
+void Window::orientationChange(const Gtk::StateFlags&) {
+    this->images_box.set_orientation(this->hv_switch.get_state() ? Gtk::ORIENTATION_VERTICAL : Gtk::ORIENTATION_HORIZONTAL);
 }
 
 void Window::switchEditingMode(Gtk::Widget*, guint page_number) {
@@ -398,7 +346,9 @@ void Window::directActivationBlockingChanged(const Gtk::StateFlags&) {
         this->applyHSVEdits();
     }
 }
+/* #endregion       button signals */
 
+/* #region          other */
 void Window::windowFinishSetup() {
     const int min_position_base      = this->base.property_min_position(),
               max_position_left_base = this->left_base.property_max_position();
@@ -410,6 +360,30 @@ void Window::windowFinishSetup() {
     this->left_base.set_position(max_position_left_base);
 }
 
+void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
+    uint8_t blocked_mask = 1u << channel_idx;
+
+    // check if no adjustment synchronyzing is already in progress
+    if (!(this->channel_blocked_flags & blocked_mask)) {
+        // switch blocking for this channel on
+        this->channel_blocked_flags ^= blocked_mask;
+
+        size_t adjustments_idx = channel_idx * 2ul;
+        double min_value = this->adjustments[adjustments_idx]->get_value(),
+               max_value = this->adjustments[adjustments_idx + 1ul]->get_value();
+        
+        if (max_value < min_value) {
+            this->adjustments[adjustments_idx + static_cast<size_t>(called_from_min)]->set_value(min_value);
+        }
+
+        // switch blocking for this channel off
+        this->channel_blocked_flags ^= blocked_mask;
+    }
+}
+/* #endregion       other */
+/* #endregion   signal handlers*/
+
+/* #region      apply functions */
 void Window::applyHSVEdits() {
     if (this->original_image.empty()) {
         return;
@@ -429,7 +403,7 @@ void Window::applyHSVEdits() {
 
     this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
     
-    Window::convertCVtoGTK(this->altered_image, this->altered_image_widget);
+    image_proc::convertCVtoGTK(this->altered_image, this->altered_image_widget);
 }
 
 void Window::applyChannelEdits() {
@@ -443,9 +417,11 @@ void Window::applyChannelEdits() {
 
     this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
 
-    Window::convertCVtoGTK(this->altered_image, this->altered_image_widget);
+    image_proc::convertCVtoGTK(this->altered_image, this->altered_image_widget);
 }
+/* #endregion   apply functions*/
 
+/* #region      image load/save */
 void Window::saveImage() {
     // sanity check
     assert(!this->original_image.empty());
@@ -491,6 +467,31 @@ void Window::saveImage() {
     }
 }
 
+void Window::loadImage(const std::string& filepath) {
+    if (filepath.empty()) {
+        return;
+    }
+
+    // load initial image
+    if (!image_proc::loadImage(this->original_image, filepath)) {
+        Gtk::MessageDialog dialog(*this, "Failed to load initial image:", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        dialog.set_secondary_text(filepath);
+        dialog.run();
+    } else {
+        image_proc::convertCVtoGTK(this->original_image, this->original_image_widget);
+
+        if (this->current_page_number == Pages::LIMIT) {
+            if (this->direct_activation_blocked) {
+                return;
+            }
+
+            this->applyHSVEdits();
+        } else {
+            this->applyChannelEdits();
+        }
+    }
+}
+
 void Window::loadImage() {
     Gtk::FileChooserDialog dialog(*this, "Open", Gtk::FILE_CHOOSER_ACTION_SAVE, Gtk::DIALOG_DESTROY_WITH_PARENT & Gtk::DIALOG_MODAL);
     dialog.add_button("Cancel", Gtk::RESPONSE_CANCEL);
@@ -532,7 +533,7 @@ void Window::loadImage() {
         dialog.set_secondary_text(filepath);
         dialog.run();
     } else {
-        Window::convertCVtoGTK(this->original_image, this->original_image_widget);
+        image_proc::convertCVtoGTK(this->original_image, this->original_image_widget);
 
         if (this->current_page_number == Pages::LIMIT) {
             if (this->direct_activation_blocked) {
@@ -556,3 +557,4 @@ void Window::setPreviews() {
         this->limit_preview_images[i].set(buffer);
     }
 }
+/* #endregion   image load/save*/

@@ -22,14 +22,6 @@ class Window: public Gtk::Window {
         */
         void loadImage(const std::string& filepath);
     private:
-        /**
-         * Convert an image from a cv::Mat to an Gtk::Image.
-         * 
-         * @param src: source image to be converted (RGB, 3channel, 8bit)
-         * @param dst: resulting Gtk image (existing pixbuf will be overwritten)
-        */
-        static void convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst);
-
         /* #region      signal handlers */
         /* #region          radio button handlers */
         /**

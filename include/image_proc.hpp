@@ -2,6 +2,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <gtkmm/image.h>
+
 #include <string>
 #include <map>
 
@@ -55,15 +57,6 @@ namespace image_proc {
         cv::COLOR_YCrCb2RGB,        cv::COLOR_Lab2RGB,          cv::COLOR_Luv2RGB,          cv::COLOR_HSV2RGB_FULL,     cv::COLOR_HLS2RGB_FULL,
         cv::COLOR_YUV2RGB,          cv::COLOR_YUV2RGB_I420,     cv::COLOR_YUV2RGB_YV12,
     };
-
-    /**
-     * Initialize the image buffers for the scale preview images.
-     * 
-     * @param channel_preview_matrices: array of matrices for channel previews
-    */
-    void initScalePreviews(
-        const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrices
-    );
     
     /**
      * Convert preview matrices into their respective color space.
@@ -168,6 +161,7 @@ namespace image_proc {
         const std::string& filepath
     );
 
+
     /**
      * Return a representation of the average color of the image.
      * Format: "Red: {0} Green: {1} Blue: {3}"
@@ -177,5 +171,17 @@ namespace image_proc {
     */
     std::string getAverageColorString(
         const cv::Mat& image
+    );
+
+
+    /**
+     * Convert an image from a cv::Mat to an Gtk::Image.
+     * 
+     * @param src: source image to be converted (RGB, 3channel, 8bit)
+     * @param dst: resulting Gtk image (existing pixbuf will be overwritten)
+    */
+    static void convertCVtoGTK(
+        const cv::Mat& src,
+        Gtk::Image& dst
     );
 }

@@ -32,6 +32,7 @@ void image_proc::limitImageByHSV(const cv::Mat& src, cv::Mat& dst, double hue_bo
     cv::bitwise_or(foreground, background, dst);
 }
 
+
 /**
  * Iterate over every pixel and set selected channels to the minimum value of that pixel.
  * 
@@ -95,45 +96,6 @@ void setChannelsToAvg(const cv::Mat& src, cv::Mat& dst, const image_proc::Channe
         );
     }
 }
-
-/**
- * Iterate over every pixel and set selected channels to the median of all values of that pixel.
- * 
- * @param src: Source image in RGB color space
- * @param dst: Output image (will be overwritten)
- * @param output_channel: wether to choose channel 0, 1, 2 or all (-1)
-void setChannelsToMedian(const cv::Mat& src, cv::Mat& dst, const image_proc::ChannelOption& output_channel) {
-    src.copyTo(dst);
-
-    if (output_channel == image_proc::ChannelOption::ALL) {
-        dst.forEach<image_proc::Pixel>(
-            [](image_proc::Pixel& pixel, const int*) -> void {
-                uint8_t min = std::min(pixel[0], pixel[1]);
-                min = std::min(min, pixel[2]);
-                uint8_t max = std::max(pixel[0], pixel[1]);
-                max = std::max(max, pixel[2]);
-                uint8_t median = pixel[0] + pixel[1] + pixel[2] - min - max; //only works for 3 values;
-
-                pixel[0] = median; pixel[1] = median; pixel[2] = median;
-            }
-        );
-    } else {
-        dst.forEach<image_proc::Pixel>(
-            [output_channel](image_proc::Pixel& pixel, const int*) -> void {
-                uint8_t min = std::min(pixel[0], pixel[1]);
-                min = std::min(min, pixel[2]);
-                uint8_t max = std::max(pixel[0], pixel[1]);
-                max = std::max(max, pixel[2]);
-                uint8_t median = pixel[0] + pixel[1] + pixel[2] - min - max; //only works for 3 values;
-
-                pixel[output_channel] = median;
-                pixel[(output_channel + 1) % 3] = 0;
-                pixel[(output_channel + 2) % 3] = 0;
-            }
-        );
-    }
-}
-*/
 
 /**
  * Iterate over every pixel and set selected channels to the maximum value of that pixel.
@@ -235,6 +197,7 @@ void image_proc::manipulateChannels(const cv::Mat& src, cv::Mat& dst, const Modi
     dst = std::move(output);
 }
 
+
 void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, double compression_level) {
     src.copyTo(dst);
 
@@ -256,6 +219,7 @@ void image_proc::compressImage(const cv::Mat& src, cv::Mat& dst, double compress
     );
 }
 
+
 bool image_proc::loadImage(cv::Mat& image, const std::string& filepath) {
     cv::Mat temp = cv::imread(filepath);
     
@@ -275,6 +239,7 @@ bool image_proc::saveImage(const cv::Mat& image, const std::string& filepath) {
     return cv::imwrite(filepath, temp);
 }
 
+
 std::string image_proc::getAverageColorString(const cv::Mat& image) {
     std::stringstream avg_color_string;
 
@@ -285,4 +250,13 @@ std::string image_proc::getAverageColorString(const cv::Mat& image) {
                      << "\tB: " << average[2];
 
     return avg_color_string.str();
+}
+
+
+void image_proc::convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst) {
+    assert(src.data != NULL);
+
+    Glib::RefPtr<Gdk::Pixbuf> image_buffer = Gdk::Pixbuf::create_from_data(src.data, Gdk::COLORSPACE_RGB, false, 8, src.cols, src.rows, src.step);
+
+    dst.set(image_buffer);
 }
