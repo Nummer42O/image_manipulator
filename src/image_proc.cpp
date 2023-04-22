@@ -5,21 +5,11 @@
 #define MAX_8BIT 0xFF
 
 
-void image_proc::initScalePreviews(const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrices) {
-    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        channel_preview_matrices[i].forEach<Pixel>(
-            [i](Pixel& pixel, const int* position) {
-                pixel[i] = *position;
-            }
-        );
-    }
-}
-
-void image_proc::convertScalePreviewColorSpaces(const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_originals, const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_references, const ColorSpace& color_space) {
-    cv::ColorConversionCodes color_conversion_code = image_proc::convert_from_rgb[color_space];
+void image_proc::convertScalePreviewColorSpaces(const std::array<const cv::Mat, NR_CHANNELS>& limit_preview_matrix_originals, const std::array<cv::Mat, NR_CHANNELS>& limit_preview_matrix_references, const ColorSpace& color_space) {
+    cv::ColorConversionCodes color_conversion_code = image_proc::convert_to_rgb[color_space];
 
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        cv::cvtColor(channel_preview_matrix_originals[i], channel_preview_matrix_references[i], color_conversion_code);
+        cv::cvtColor(limit_preview_matrix_originals[i], limit_preview_matrix_references[i], color_conversion_code);
     }
 }
 

@@ -5,31 +5,53 @@
 #include <string>
 #include <map>
 
-#define NR_CHANNELS 3ul
+#define NR_CHANNELS     3ul
+#define NR_COLOR_SPACES 14ul
+
+/*
+ * Channels of GRAY color space: 1
+ * Channels of BGR color space: 3
+ * Channels of BGR565 color space: 2
+ * Channels of BGR555 color space: 2
+ * Channels of XYZ color space: 3
+ * Channels of YCrCb color space: 3
+ * Channels of Lab color space: 3
+ * Channels of Luv color space: 3
+ * Channels of HSV color space: 3
+ * Channels of HLS color space: 3
+ * Channels of YUV color space: 3
+ * Channels of YUV_I420 color space: 1
+ * Channels of YUV_YV12 color space: 1
+*/
 
 namespace image_proc {
     enum ColorSpace {
-        RGB = -1,                   BGR,                        BGR565,                     BGR555,                     XYZ,
+        RGB,
+        GRAY,                       BGR,                        BGR565,                     BGR555,                     XYZ,
         YCrCb,                      Lab,                        Luv,                        HSV,                        HLS,
         YUV,                        YUV_I420,                   YUV_YV12
     };
-    const std::array<std::string, 13ul> color_space_names {
-        "RGB",                      "BGR",                      "BGR565",                   "BGR555",                   "XYZ",
+    const std::array<std::string, NR_COLOR_SPACES> color_space_names {
+        "RGB",
+        "GRAY",                     "BGR",                      "BGR565",                   "BGR555",                   "XYZ",
         "YCrCb",                    "Lab",                      "Luv",                      "HSV",                      "HLS",
         "YUV",                      "YUV_I420",                 "YUV_YV12",
     };
-    const std::array<std::array<std::string, NR_CHANNELS>, 13ul> color_space_channels {{
-        {{" R ", " G ", " B "}},    {{" B ", " G ", " R "}},    {{" B ", " G ", " R "}},    {{" B ", " G ", " R "}},    {{" X ", " Y ", " Z "}},
+    const std::array<std::array<std::string, NR_CHANNELS>, NR_COLOR_SPACES> color_space_channels {{
+        {{" R ", " G ", " B "}},
+        {{" GRAY ", "", ""}},       {{" B ", " G ", " R "}},    {{" B ", " G ", " R "}},    {{" B ", " G ", " R "}},    {{" X ", " Y ", " Z "}},
         {{" Y ", " Cr ", " Cb "}},  {{" L ", " a ", " b "}},    {{" L ", " u ", " v "}},    {{" H ", " S ", " V "}},    {{" H ", " L ", " S "}},
-        {{" Y ", " U ", " V "}},    {{" Y ", " U ", " V "}},    {{" Y ", " U ", " V "}},
+        {{" Y ", " U ", " V "}},    {{" Y ", "", ""}},          {{" Y ", "", ""}},
     }};
-    const std::array<cv::ColorConversionCodes, 12ul> convert_from_rgb {
-                                    cv::COLOR_RGB2BGR,          cv::COLOR_RGB2BGR565,       cv::COLOR_RGB2BGR555,       cv::COLOR_RGB2XYZ,
+    const std::array<cv::ColorConversionCodes, NR_COLOR_SPACES> convert_from_rgb {
+        cv::COLOR_COLORCVT_MAX,
+        cv::COLOR_RGB2GRAY,         cv::COLOR_RGB2BGR,          cv::COLOR_RGB2BGR565,       cv::COLOR_RGB2BGR555,       cv::COLOR_RGB2XYZ,
         cv::COLOR_RGB2YCrCb,        cv::COLOR_RGB2Lab,          cv::COLOR_RGB2Luv,          cv::COLOR_RGB2HSV_FULL,     cv::COLOR_RGB2HLS_FULL,
         cv::COLOR_RGB2YUV,          cv::COLOR_RGB2YUV_I420,     cv::COLOR_RGB2YUV_YV12,
     };
-    const std::array<cv::ColorConversionCodes, 12ul> convert_to_rgb {
-                                    cv::COLOR_BGR2RGB,          cv::COLOR_BGR5652RGB,       cv::COLOR_BGR5552RGB,       cv::COLOR_XYZ2RGB,
+    const std::array<cv::ColorConversionCodes, NR_COLOR_SPACES> convert_to_rgb {
+        cv::COLOR_COLORCVT_MAX,
+        cv::COLOR_GRAY2RGB,         cv::COLOR_BGR2RGB,          cv::COLOR_BGR5652RGB,       cv::COLOR_BGR5552RGB,       cv::COLOR_XYZ2RGB,
         cv::COLOR_YCrCb2RGB,        cv::COLOR_Lab2RGB,          cv::COLOR_Luv2RGB,          cv::COLOR_HSV2RGB_FULL,     cv::COLOR_HLS2RGB_FULL,
         cv::COLOR_YUV2RGB,          cv::COLOR_YUV2RGB_I420,     cv::COLOR_YUV2RGB_YV12,
     };
@@ -46,12 +68,12 @@ namespace image_proc {
     /**
      * Convert preview matrices into their respective color space.
      * 
-     * @param channel_preview_matrix_originals: original preview images to be converted
-     * @param channel_preview_matrix_references: destination images
+     * @param limit_preview_matrix_originals: original preview images to be converted
+     * @param limit_preview_matrix_references: destination images
     */
     void convertScalePreviewColorSpaces(
-        const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_originals,
-        const std::array<cv::Mat, NR_CHANNELS>& channel_preview_matrix_references,
+        const std::array<const cv::Mat, NR_CHANNELS>& limit_preview_matrix_originals,
+        const std::array<cv::Mat, NR_CHANNELS>& limit_preview_matrix_references,
         const ColorSpace& color_space
     );
 

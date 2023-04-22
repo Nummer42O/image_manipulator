@@ -17,14 +17,12 @@
  *  - add printing
  *  - add hue-, value-, saturation-scale images to show what value is what
  *  - look into hv_switch again, maybe another version? single button?
- *  - HSV presets
+ *  - LIMIT presets
  *  - fix windowFinishSetup for moving?
 */
 
 Window::Window() {
     this->set_title("Image Manipulator");
-
-    image_proc::initScalePreviews(this->channel_preview_matrix_originals);
 
     this->base.set_orientation(Gtk::ORIENTATION_HORIZONTAL);
     this->base.set_wide_handle();
@@ -39,7 +37,7 @@ Window::Window() {
     editing_notebook->signal_switch_page().connect(sigc::mem_fun2(*this, &Window::switchEditingMode));
     this->left_base.pack1(*editing_notebook, Gtk::EXPAND | Gtk::FILL);
 
-    /* #region              HSV manipulation */
+    /* #region              LIMIT manipulation */
     Gtk::Box* hsv_adjustments = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, SPACING);
     hsv_adjustments->set_border_width(5);
     editing_notebook->append_page(*hsv_adjustments, "_HSV", true);
@@ -48,76 +46,34 @@ Window::Window() {
     this->setPreviews();
 
     /* #region                  hue */
-    Gtk::Frame* hue_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space + 1][0]);
-    hsv_adjustments->pack_start(*hue_frame, Gtk::PACK_EXPAND_WIDGET);
+    for (size_t i = 0; i < NR_CHANNELS; i++) {
+        Gtk::Frame* channel_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space][0]);
+        hsv_adjustments->pack_start(*channel_frame, Gtk::PACK_EXPAND_WIDGET);
 
-    Gtk::Box* hue_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
-    hue_adjustment->set_border_width(SPACING);
-    hue_frame->add(*hue_adjustment);
-    
-    // min
-    this->hue_min_adj = CREATE_MIN_ADJUSTMENT;
-    this->hue_min_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeHueAdjustment), false));
-    Gtk::Scale* hue_min = Gtk::make_managed<Gtk::Scale>(this->hue_min_adj, Gtk::ORIENTATION_VERTICAL);
-    hue_min->set_inverted();
-    hue_adjustment->pack_start(*hue_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+        Gtk::Box* adjustments_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
+        adjustments_box->set_border_width(SPACING);
+        channel_frame->add(*adjustments_box);
+        
+        // min
+        size_t adjustments_idx = i * 2ul;
+        this->adjustments[adjustments_idx] = CREATE_MIN_ADJUSTMENT;
+        this->adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, true));
+        Gtk::Scale* min_scale = Gtk::make_managed<Gtk::Scale>(this->adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
+        min_scale->set_inverted();
+        adjustments_box->pack_start(*min_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
-    // preview
-    hue_adjustment->pack_start(this->channel_preview_images[0], Gtk::PACK_SHRINK);
+        // preview
+        adjustments_box->pack_start(this->limit_preview_images[i], Gtk::PACK_SHRINK);
 
-    // max
-    this->hue_max_adj = CREATE_MAX_ADJUSTMENT;
-    this->hue_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeHueAdjustment), true));
-    Gtk::Scale* hue_max = Gtk::make_managed<Gtk::Scale>(this->hue_max_adj, Gtk::ORIENTATION_VERTICAL);
-    hue_max->set_inverted();
-    hue_adjustment->pack_start(*hue_max, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+        // max
+        adjustments_idx++;
+        this->adjustments[adjustments_idx] = CREATE_MAX_ADJUSTMENT;
+        this->adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, false));
+        Gtk::Scale* max_scale = Gtk::make_managed<Gtk::Scale>(this->adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
+        max_scale->set_inverted();
+        adjustments_box->pack_start(*max_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+    }
     /* #endregion               hue */
-
-    /* #region                  saturation */
-    Gtk::Frame* sat_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space + 1][1]);
-    hsv_adjustments->pack_start(*sat_frame, Gtk::PACK_EXPAND_WIDGET);
-
-    Gtk::Box* sat_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
-    sat_adjustment->set_border_width(SPACING);
-    sat_frame->add(*sat_adjustment);
-    
-    // min
-    this->sat_min_adj = CREATE_MIN_ADJUSTMENT;
-    this->sat_min_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeSaturationAdjustment), false));
-    Gtk::Scale* sat_min = Gtk::make_managed<Gtk::Scale>(this->sat_min_adj, Gtk::ORIENTATION_VERTICAL);
-    sat_min->set_inverted();
-    sat_adjustment->pack_start(*sat_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
-
-    // max
-    this->sat_max_adj = CREATE_MAX_ADJUSTMENT;
-    this->sat_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeSaturationAdjustment), true));
-    Gtk::Scale* sat_max = Gtk::make_managed<Gtk::Scale>(this->sat_max_adj, Gtk::ORIENTATION_VERTICAL);
-    sat_max->set_inverted();
-    sat_adjustment->pack_start(*sat_max, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
-    /* #endregion               saturation */
-
-    /* #region                  value */
-    Gtk::Frame* val_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space + 1][2]);
-    hsv_adjustments->pack_start(*val_frame, Gtk::PACK_EXPAND_WIDGET);
-
-    Gtk::Box* val_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
-    val_adjustment->set_border_width(SPACING);
-    val_frame->add(*val_adjustment);
-    
-    // min
-    this->val_min_adj = CREATE_MIN_ADJUSTMENT;
-    this->val_min_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeValueAdjustment), false));
-    Gtk::Scale* val_min = Gtk::make_managed<Gtk::Scale>(this->val_min_adj, Gtk::ORIENTATION_VERTICAL);
-    val_min->set_inverted();
-    val_adjustment->pack_start(*val_min, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
-
-    // max
-    this->val_max_adj = CREATE_MAX_ADJUSTMENT;
-    this->val_max_adj->signal_value_changed().connect(sigc::bind(sigc::mem_fun1(*this, &Window::changeValueAdjustment), true));
-    Gtk::Scale* val_max = Gtk::make_managed<Gtk::Scale>(this->val_max_adj, Gtk::ORIENTATION_VERTICAL);
-    val_max->set_inverted();
-    val_adjustment->pack_start(*val_max, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
-    /* #endregion               value */
 
     /* #region                  block hsv adjustment */
     Gtk::Box* blocking_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
@@ -128,10 +84,10 @@ Window::Window() {
     blocking_label->set_halign(Gtk::ALIGN_START);
     blocking_adjustment->pack_start(*blocking_label, Gtk::PACK_EXPAND_WIDGET);
 
-    this->hsv_switch.signal_state_flags_changed().connect(sigc::mem_fun1(*this, &Window::hsvBlockChanged));
-    blocking_adjustment->pack_end(this->hsv_switch, Gtk::PACK_SHRINK);
+    this->direct_application_switch.signal_state_flags_changed().connect(sigc::mem_fun1(*this, &Window::directActivationBlockingChanged));
+    blocking_adjustment->pack_end(this->direct_application_switch, Gtk::PACK_SHRINK);
     /* #endregion               block hsv adjustment*/
-    /* #endregion           HSV manipulation */
+    /* #endregion           LIMIT manipulation */
 
     /* #region              channel manipulation */
     /* #region                  channel modifiers */
@@ -346,8 +302,8 @@ void Window::loadImage(const std::string& filepath) {
     } else {
         Window::convertCVtoGTK(this->original_image, this->original_image_widget);
 
-        if (this->current_page_number == Pages::HSV) {
-            if (this->hsv_blocked) {
+        if (this->current_page_number == Pages::LIMIT) {
+            if (this->direct_activation_blocked) {
                 return;
             }
 
@@ -366,74 +322,32 @@ void Window::convertCVtoGTK(const cv::Mat& src, Gtk::Image& dst) {
     dst.set(image_buffer);
 }
 
-void Window::changeHueAdjustment(bool is_max) {
-    if (!this->hue_blocked) {
-        this->hue_blocked = true;
+void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
+    uint8_t blocked_mask = 1u << channel_idx;
 
-        double max_value = this->hue_max_adj->get_value(),
-               min_value = this->hue_min_adj->get_value();
+    // check if no adjustment synchronyzing is already in progress
+    if (!(this->channel_blocked_flags & blocked_mask)) {
+        // switch blocking for this channel on
+        this->channel_blocked_flags ^= blocked_mask;
 
-        if (is_max && min_value > max_value) {
-            this->hue_min_adj->set_value(max_value);
-        } else if (!is_max && max_value < min_value) {
-            this->hue_max_adj->set_value(min_value);
+        size_t adjustments_idx = channel_idx * 2ul;
+        double min_value = this->adjustments[adjustments_idx]->get_value(),
+               max_value = this->adjustments[adjustments_idx + 1ul]->get_value();
+        
+        if (max_value < min_value) {
+            this->adjustments[adjustments_idx + static_cast<size_t>(called_from_min)]->set_value(min_value);
         }
 
-        if (!this->hsv_blocked) {
-            this->applyHSVEdits();
-        }
-
-        this->hue_blocked = false;
-    }
-}
-
-void Window::changeSaturationAdjustment(bool is_max) {
-    if (!this->sat_blocked) {
-        this->sat_blocked = true;
-
-        double max_value = this->sat_max_adj->get_value(),
-               min_value = this->sat_min_adj->get_value();
-
-        if (is_max && min_value > max_value) {
-            this->sat_min_adj->set_value(max_value);
-        } else if (!is_max && max_value < min_value) {
-            this->sat_max_adj->set_value(min_value);
-        }
-
-        if (!this->hsv_blocked) {
-            this->applyHSVEdits();
-        }
-
-        this->sat_blocked = false;
-    }
-}
-
-void Window::changeValueAdjustment(bool is_max) {
-    if (!this->val_blocked) {
-        this->val_blocked = true;
-
-        double max_value = this->val_max_adj->get_value(),
-               min_value = this->val_min_adj->get_value();
-
-        if (is_max && min_value > max_value) {
-            this->val_min_adj->set_value(max_value);
-        } else if (!is_max && max_value < min_value) {
-            this->val_max_adj->set_value(min_value);
-        }
-
-        if (!this->hsv_blocked) {
-            this->applyHSVEdits();
-        }
-
-        this->val_blocked = false;
+        // switch blocking for this channel off
+        this->channel_blocked_flags ^= blocked_mask;
     }
 }
 
 void Window::compressionModechange() {
     this->current_compression_level = this->compression_level_adj->get_value();
 
-    if (this->current_page_number == Pages::HSV) {
-        if (this->hsv_blocked) {
+    if (this->current_page_number == Pages::LIMIT) {
+        if (this->direct_activation_blocked) {
             return;
         }
 
@@ -466,8 +380,8 @@ void Window::changeChannelManipulatorChannel(const image_proc::ChannelOption& op
 void Window::switchEditingMode(Gtk::Widget*, guint page_number) {
     this->current_page_number = page_number;
 
-    if (this->current_page_number == Pages::HSV) {
-        if (this->hsv_blocked) {
+    if (this->current_page_number == Pages::LIMIT) {
+        if (this->direct_activation_blocked) {
             return;
         }
 
@@ -477,10 +391,10 @@ void Window::switchEditingMode(Gtk::Widget*, guint page_number) {
     }
 }
 
-void Window::hsvBlockChanged(const Gtk::StateFlags&) {
-    this->hsv_blocked = this->hsv_switch.get_state();
+void Window::directActivationBlockingChanged(const Gtk::StateFlags&) {
+    this->direct_activation_blocked = this->direct_application_switch.get_state();
 
-    if (this->current_page_number == Pages::HSV && !this->hsv_blocked) {
+    if (this->current_page_number == Pages::LIMIT && !this->direct_activation_blocked) {
         this->applyHSVEdits();
     }
 }
@@ -501,12 +415,12 @@ void Window::applyHSVEdits() {
         return;
     }
 
-    double hue_min = this->hue_min_adj->get_value(),
-           hue_max = this->hue_max_adj->get_value(),
-           sat_min = this->sat_min_adj->get_value(),
-           sat_max = this->sat_max_adj->get_value(),
-           val_min = this->val_min_adj->get_value(),
-           val_max = this->val_max_adj->get_value();
+    double hue_min = this->adjustments[0]->get_value(),
+           hue_max = this->adjustments[1]->get_value(),
+           sat_min = this->adjustments[2]->get_value(),
+           sat_max = this->adjustments[3]->get_value(),
+           val_min = this->adjustments[4]->get_value(),
+           val_max = this->adjustments[5]->get_value();
 
     cv::Mat temp;
     image_proc::limitImageByHSV(this->original_image, temp,
@@ -620,8 +534,8 @@ void Window::loadImage() {
     } else {
         Window::convertCVtoGTK(this->original_image, this->original_image_widget);
 
-        if (this->current_page_number == Pages::HSV) {
-            if (this->hsv_blocked) {
+        if (this->current_page_number == Pages::LIMIT) {
+            if (this->direct_activation_blocked) {
                 return;
             }
 
@@ -633,10 +547,12 @@ void Window::loadImage() {
 }
 
 void Window::setPreviews() {
-    image_proc::convertScalePreviewColorSpaces(this->channel_preview_matrix_originals, this->channel_preview_matrix_references, this->current_color_space);
+    image_proc::convertScalePreviewColorSpaces(this->limit_preview_matrix_originals, this->limit_preview_matrix_references, this->current_color_space);
 
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        Glib::RefPtr<Gdk::Pixbuf> buffer = Gdk::Pixbuf::create_from_data(this->channel_preview_matrix_references[i].data, Gdk::COLORSPACE_RGB, false, 8, this->channel_preview_matrix_references[i].cols, this->channel_preview_matrix_references[i].rows, this->channel_preview_matrix_references[i].step);
-        this->channel_preview_images[i].set(buffer);
+        Glib::RefPtr<Gdk::Pixbuf> buffer = Gdk::Pixbuf::create_from_data(this->limit_preview_matrix_references[i].data, Gdk::COLORSPACE_RGB, false, 8, this->limit_preview_matrix_references[i].cols, this->limit_preview_matrix_references[i].rows, this->limit_preview_matrix_references[i].step);
+        buffer = buffer->scale_simple(5, 200, Gdk::INTERP_BILINEAR);
+        
+        this->limit_preview_images[i].set(buffer);
     }
 }
