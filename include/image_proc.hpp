@@ -102,7 +102,7 @@ namespace image_proc {
         RED = 0, GREEN = 1, BLUE = 2,
         HUE = 3, SAT   = 4, VAL  = 5
     };
-    typedef cv::Vec<uint8_t, 3> Pixel;
+    typedef cv::Vec<uint8_t, NR_CHANNELS> Pixel;
 
     /**
      * Change image look by manipulating certain channels.
