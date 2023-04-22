@@ -1,13 +1,15 @@
-#include "window.hpp"
-
 #include <iostream>
 #include <string>
+
+#include "window.hpp"
+
 
 #define CREATE_MIN_ADJUSTMENT Gtk::Adjustment::create(0.0, 0.0, 255.0)
 #define CREATE_MAX_ADJUSTMENT Gtk::Adjustment::create(255.0, 0.0, 255.0)
 
 #define SPACING         5
 #define SCALE_PADDING   20
+
 
 /** TODO:
  *  - add option to take altered image as original image -> apply?
@@ -353,8 +355,8 @@ void Window::windowFinishSetup() {
     const int min_position_base      = this->base.property_min_position(),
               max_position_left_base = this->left_base.property_max_position();
 
-    std::clog << "min base pos: " << min_position_base << '\n'
-              << "max left pos: " << max_position_left_base << std::endl;
+    // std::clog << "min base pos: " << min_position_base << '\n'
+    //           << "max left pos: " << max_position_left_base << std::endl;
 
     this->base.set_position(min_position_base);
     this->left_base.set_position(max_position_left_base);
@@ -379,6 +381,10 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
         // switch blocking for this channel off
         this->channel_blocked_flags ^= blocked_mask;
     }
+}
+
+void Window::limitPreviewChangedSize(Gtk::Allocation& allocation) {
+
 }
 /* #endregion       other */
 /* #endregion   signal handlers*/

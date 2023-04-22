@@ -1,14 +1,12 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-
 #include <gtkmm/image.h>
 
 #include <string>
 #include <map>
 
-#define NR_CHANNELS     3ul
-#define NR_COLOR_SPACES 14ul
+#include "macros.hpp"
 
 /*
  * Channels of GRAY color space: 1
@@ -180,7 +178,7 @@ namespace image_proc {
      * @param src: source image to be converted (RGB, 3channel, 8bit)
      * @param dst: resulting Gtk image (existing pixbuf will be overwritten)
     */
-    static void convertCVtoGTK(
+    void convertCVtoGTK(
         const cv::Mat& src,
         Gtk::Image& dst
     );

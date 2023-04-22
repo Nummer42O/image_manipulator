@@ -1,6 +1,6 @@
-#include "application.hpp"
-
 #include <iostream>
+
+#include "application.hpp"
 
 Application::Application(): Gtk::Application("image_manipulator.main", Gio::APPLICATION_HANDLES_COMMAND_LINE) {}
 Application::~Application() {

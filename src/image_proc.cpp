@@ -1,6 +1,6 @@
-#include "image_proc.hpp"
-
 #include <memory>
+
+#include "image_proc.hpp"
 
 #define MAX_8BIT 0xFF
 

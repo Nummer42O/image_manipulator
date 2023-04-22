@@ -1,8 +1,10 @@
 #pragma once
 
 #include <gtkmm.h>
+
 #include <array>
 
+#include "macros.hpp"
 #include "image_proc.hpp"
 
 class Window: public Gtk::Window {
@@ -87,6 +89,13 @@ class Window: public Gtk::Window {
          * @param called_from_min: wether or not this callback is bound to a minimum adjustment or not
         */
         void changedAdjustment(size_t channel_idx, bool called_from_min);
+
+        /**
+         * Callback to resize limit preview when its scrolled windows size allocation changes.
+         * 
+         * @param allocation: new size allocation of parent window
+        */
+        void limitPreviewChangedSize(Gtk::Allocation& allocation);
         /* #endregion       other */
         /* #endregion   signal handlers */
 
