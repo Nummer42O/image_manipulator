@@ -375,7 +375,9 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
                max_value = this->adjustments[adjustments_idx + 1ul]->get_value();
         
         if (max_value < min_value) {
-            this->adjustments[adjustments_idx + static_cast<size_t>(called_from_min)]->set_value(min_value);
+            size_t adjustment_set_idx = adjustments_idx + static_cast<size_t>(called_from_min);
+            std::cout << adjustment_set_idx << std::endl;
+            this->adjustments[adjustment_set_idx]->set_value(min_value);
         }
 
         // switch blocking for this channel off
@@ -384,7 +386,7 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
 }
 
 void Window::limitPreviewChangedSize(Gtk::Allocation& allocation) {
-
+    //TODO: CONTINUE
 }
 /* #endregion       other */
 /* #endregion   signal handlers*/

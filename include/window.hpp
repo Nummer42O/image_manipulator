@@ -132,7 +132,7 @@ class Window: public Gtk::Window {
 
         /* #region      members */
         /* #region          limits  */
-        image_proc::ColorSpace      current_color_space = image_proc::ColorSpace::HSV; //only temp
+        image_proc::ColorSpace      current_color_space = image_proc::ColorSpace::RGB; //only temp
         
         // min and max adjustments for each channel
         // pattern: min, max, min, max, min, max
@@ -153,9 +153,9 @@ class Window: public Gtk::Window {
             cv::imread("../resources/channel_2.bmp"),
         };
         std::array<cv::Mat, NR_CHANNELS>    limit_preview_matrix_references = {
-            cv::Mat(255, 5, CV_8UC3),
-            cv::Mat(255, 5, CV_8UC3),
-            cv::Mat(255, 5, CV_8UC3),
+            cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3),
+            cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3),
+            cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3),
         };
         std::array<Gtk::Image, NR_CHANNELS> limit_preview_images;
 
