@@ -555,14 +555,59 @@ void Window::loadImage() {
     }
 }
 
+void Window::getPreviews() {
+    if (this->limit_preview_references[this->current_color_space][0]) {
+        return;
+    }
+
+    std::clog << "Loading previews for " << image_proc::color_space_names[this->current_color_space] << std::endl;
+
+    cv::Mat loaded_image;
+    std::string filepath;
+
+    if (image_proc::color_space_channels[this->current_color_space][1] == "") { //color space only has one channel
+        filepath = "../resources/" + image_proc::color_space_names[this->current_color_space] + ".bmp";
+        loaded_image = cv::imread(filepath);
+        
+        if (loaded_image.empty()) {
+            Gtk::MessageDialog dialog(*this, "Failed to load preview image. Using default.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+            dialog.set_secondary_text(filepath);
+            dialog.run();
+
+            this->limit_preview_references[this->current_color_space][0] = &(this->default_preview_image);
+        } else {
+            this->limit_preview_references[this->current_color_space][0] = &loaded_image;
+        }
+    } else {
+        for (size_t i = 0ul; i < NR_CHANNELS; i++) {
+            filepath = "../resources/" + image_proc::color_space_names[this->current_color_space] + '_' + image_proc::color_space_channels[this->current_color_space][i] + ".bmp";
+            loaded_image = cv::imread(filepath);
+            
+            if (loaded_image.empty()) {
+                Gtk::MessageDialog dialog(*this, "Failed to load preview image. Using default.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+                dialog.set_secondary_text(filepath);
+                dialog.run();
+
+                this->limit_preview_references[this->current_color_space][i] = &(this->default_preview_image);
+            } else {
+                this->limit_preview_references[this->current_color_space][i] = &loaded_image;
+            }
+        }
+    }
+}
+
 void Window::setPreviews() {
-    image_proc::convertScalePreviewColorSpaces(this->limit_preview_matrix_originals, this->limit_preview_matrix_references, this->current_color_space);
+    this->getPreviews();
+
+    cv::Mat* preview;
 
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        Glib::RefPtr<Gdk::Pixbuf> buffer = Gdk::Pixbuf::create_from_data(this->limit_preview_matrix_references[i].data, Gdk::COLORSPACE_RGB, false, 8, this->limit_preview_matrix_references[i].cols, this->limit_preview_matrix_references[i].rows, this->limit_preview_matrix_references[i].step);
-        buffer = buffer->scale_simple(5, 200, Gdk::INTERP_BILINEAR);
-        
-        this->limit_preview_images[i].set(buffer);
+        if (image_proc::color_space_channels[this->current_color_space][i] == "") {
+            return; //we are done here
+        }
+
+        assert(!this->limit_preview_references[this->current_color_space][i]->empty()); //CONTINUE
+        image_proc::convertCVtoGTK(*this->limit_preview_references[this->current_color_space][i], this->limit_preview_images[i]);
     }
 }
 /* #endregion   image load/save*/

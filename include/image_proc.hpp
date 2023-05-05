@@ -24,22 +24,7 @@
  * Channels of YUV_YV12 color space: 1
 */
 
-namespace image_proc {
-    //CONTINUE: make method to create those previews
-    
-    /**
-     * Convert preview matrices into their respective color space.
-     * 
-     * @param limit_preview_matrix_originals: original preview images to be converted
-     * @param limit_preview_matrix_references: destination images
-    */
-    void convertScalePreviewColorSpaces(
-        const std::array<const cv::Mat, NR_CHANNELS>& limit_preview_matrix_originals,
-        const std::array<cv::Mat, NR_CHANNELS>& limit_preview_matrix_references,
-        const ColorSpace& color_space
-    );
-
-    
+namespace image_proc {    
     /**
      * Make a copy of the image where the values of the HSV color space are restricted as given by the parameters.
      * 

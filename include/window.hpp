@@ -126,6 +126,11 @@ class Window: public Gtk::Window {
         void loadImage();
 
         /**
+         * Instantiate the previews if they aren't already.
+        */
+        void getPreviews();
+
+        /**
          * Set preview images for color space.
         */
         void setPreviews();
@@ -148,16 +153,8 @@ class Window: public Gtk::Window {
         bool direct_activation_blocked = false;
         
         // preview handling
-        const std::array<const cv::Mat, NR_CHANNELS> limit_preview_matrix_originals = {
-            cv::imread("../resources/channel_0.bmp"),
-            cv::imread("../resources/channel_1.bmp"),
-            cv::imread("../resources/channel_2.bmp"),
-        };
-        std::array<cv::Mat, NR_CHANNELS>    limit_preview_matrix_references = {
-            cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3),
-            cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3),
-            cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3),
-        };
+        cv::Mat default_preview_image = cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0));
+        std::array<std::array<cv::Mat*, NR_CHANNELS>, NR_COLOR_SPACES> limit_preview_references = {nullptr}; //instanced as nullptr for lazy singleton instantiation
         std::array<Gtk::Image, NR_CHANNELS> limit_preview_images;
 
         Gtk::Switch direct_application_switch;
