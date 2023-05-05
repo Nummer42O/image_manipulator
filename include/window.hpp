@@ -6,6 +6,7 @@
 
 #include "macros.hpp"
 #include "image_proc.hpp"
+#include "color_spaces.hpp"
 
 class Window: public Gtk::Window {
     public:

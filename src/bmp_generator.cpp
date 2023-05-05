@@ -1,6 +1,15 @@
 #include <opencv2/opencv.hpp>
 
 #include "macros.hpp"
+#include "color_spaces.hpp"
+
+const std::array<const std::array<const double, NR_CHANNELS>, NR_COLOR_SPACES> color_space_base_layouts{{
+    {{0.0, 0.0, 0.0}},
+    {{0.0, 0.0, 0.0}},          {{0.0, 0.0, 0.0}},          {{0.0, 0.0, 0.0}},          {{0.5, 0.5, 0.5}},          {{0.5, 0.5, 0.5}},
+    /*                          Not the best solution for HSV/HLS but better not to complex either                                  */
+    {{0.5, 0.5, 0.5}},          {{0.5, 0.5, 0.5}},          {{0.5, 0.5, 0.5}},          {{0.5, 0.5, 0.5}},          {{0.0, 0.0, 0.0}},
+    {{0.0, 0.0, 0.0}}
+}};
 
 typedef cv::Vec<uint8_t, NR_CHANNELS> Pixel;
 int main() {

@@ -48,7 +48,7 @@ Window::Window() {
     this->setPreviews();
 
     for (size_t i = 0; i < NR_CHANNELS; i++) {
-        Gtk::Frame* channel_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space][0]);
+        Gtk::Frame* channel_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space][i]);
         hsv_adjustments->pack_start(*channel_frame, Gtk::PACK_EXPAND_WIDGET);
 
         Gtk::Box* adjustments_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
