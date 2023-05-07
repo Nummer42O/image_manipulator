@@ -8,7 +8,7 @@
 #define CREATE_MAX_ADJUSTMENT Gtk::Adjustment::create(255.0, 0.0, 255.0)
 
 #define SPACING         5
-#define SCALE_PADDING   1
+#define SCALE_PADDING   5
 
 
 /** TODO:
@@ -86,7 +86,7 @@ Window::Window() {
 
     Gtk::Label* blocking_label = Gtk::make_managed<Gtk::Label>("Block direct processing:");
     blocking_label->set_halign(Gtk::ALIGN_START);
-    //blocking_adjustment->pack_start(*blocking_label, Gtk::PACK_EXPAND_WIDGET);
+    blocking_adjustment->pack_start(*blocking_label, Gtk::PACK_EXPAND_WIDGET);
 
     this->direct_application_switch.signal_state_flags_changed().connect(sigc::mem_fun1(*this, &Window::directActivationBlockingChanged));
     blocking_adjustment->pack_end(this->direct_application_switch, Gtk::PACK_SHRINK);
@@ -374,14 +374,16 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
         // switch blocking for this channel on
         this->channel_blocked_flags ^= blocked_mask;
 
-        size_t adjustments_idx = channel_idx * 2ul;
-        double min_value = this->adjustments[adjustments_idx]->get_value(),
-               max_value = this->adjustments[adjustments_idx + 1ul]->get_value();
+        size_t adjustments_base_idx = channel_idx * 2ul;
+        double min_value = this->adjustments[adjustments_base_idx]->get_value(),
+               max_value = this->adjustments[adjustments_base_idx + 1ul]->get_value();
         
         if (max_value < min_value) {
-            size_t adjustment_set_idx = adjustments_idx + static_cast<size_t>(called_from_min);
-            std::cout << adjustment_set_idx << std::endl;
-            this->adjustments[adjustment_set_idx]->set_value(min_value);
+            if (called_from_min) {
+                this->adjustments[adjustments_base_idx + 1ul]->set_value(min_value);
+            } else {
+                this->adjustments[adjustments_base_idx]->set_value(max_value);
+            }
         }
 
         // switch blocking for this channel off
