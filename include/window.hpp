@@ -33,6 +33,11 @@ class Window: public Gtk::Window {
         void compressionModechange();
 
         /**
+         * Update the scales when the used color space changes.
+        */
+        void limitColorSpaceChanged();
+
+        /**
          * Callback for a change in channel modifier option group.
          * Channel modifier options mean a channel or combination of channels that are used for the resulting image.
          * 
@@ -68,7 +73,7 @@ class Window: public Gtk::Window {
 
         /**
          * Callback for the LIMIT blocking toggle.
-         * This toggle allows for changed in the LIMIT adjustments without triggering a constant reapplication to the image.
+         * This toggle allows for changed in the LIMIT limit_adjustments without triggering a constant reapplication to the image.
          * 
          * @param <unused>
         */
@@ -96,9 +101,8 @@ class Window: public Gtk::Window {
          * 
          * @param <unused>
          * @param channel_idx: index of the channel the callback gets called on
-         * @param scale: a reference to one of the adjacent scales to set the limit previews height accordingly
         */
-        void limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx, Gtk::Scale* scale);
+        void limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx);
         /* #endregion       other */
         /* #endregion   signal handlers */
 
@@ -131,20 +135,27 @@ class Window: public Gtk::Window {
          * Instantiate the previews if they aren't already.
         */
         void getPreviews();
-
-        /**
-         * Set preview images for color space.
-        */
-        void setPreviews();
         /* #endregion   image load/save */
 
         /* #region      members */
+        class ColorSpaceDataColumns: public Gtk::TreeModelColumnRecord{
+            public:
+                inline ColorSpaceDataColumns() {this->add(color_space); this->add(color_space_name);}
+
+                Gtk::TreeModelColumn<image_proc::ColorSpace>    color_space;
+                Gtk::TreeModelColumn<Glib::ustring>             color_space_name;
+        };
+        ColorSpaceDataColumns color_space_data_columns;
+        Glib::RefPtr<Gtk::ListStore> color_space_data;
+
         /* #region          limits  */
-        image_proc::ColorSpace      current_color_space = image_proc::ColorSpace::RGB; //only temp
+        image_proc::ColorSpace      current_limit_color_space = image_proc::ColorSpace::RGB; //only temp
         
-        // min and max adjustments for each channel
+        // min and max limit_adjustments for each channel
         // pattern: min, max, min, max, min, max
-        std::array<Glib::RefPtr<Gtk::Adjustment>, 2 * NR_CHANNELS> adjustments;
+        std::array<Glib::RefPtr<Gtk::Adjustment>, 2 * NR_CHANNELS>  limit_adjustments;
+        std::array<Gtk::Scale, 2 * NR_CHANNELS>                     limit_scales;
+        std::array<Gtk::Frame, NR_CHANNELS>                         limit_channel_frames;
         /**
          * bit 0: channel 0
          * bit 1: channel 1
@@ -156,10 +167,11 @@ class Window: public Gtk::Window {
         
         // preview handling
         cv::Mat default_preview_image = cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0));
-        std::array<std::array<cv::Mat, NR_CHANNELS>, NR_COLOR_SPACES> limit_preview_references;
+        std::array<std::array<cv::Mat, NR_CHANNELS>, image_proc::ColorSpace::LAST> limit_preview_references;
         std::array<Gtk::Image, NR_CHANNELS> limit_preview_images;
         const double limit_preview_aspect_ratio = static_cast<double>(STD_PREVIEW_WIDTH) / static_cast<double>(STD_PREVIEW_HEIGHT);
 
+        Gtk::ComboBox limit_color_space_selector;
         Gtk::Switch direct_application_switch;
         /* #endregion       limits */
 

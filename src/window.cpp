@@ -11,17 +11,6 @@
 #define SCALE_PADDING   5
 
 
-/** TODO:
- *  - add option to take altered image as original image -> apply?
- *  - unsaved changes warning?
- *  - add open/save/print shortcut key binds
- *  - add zooming functionality
- *  - add printing
- *  - look into hv_switch again, maybe another version? single button?
- *  - LIMIT presets
- *  - fix windowFinishSetup for moving?
-*/
-
 Window::Window() {
     this->set_title("Image Manipulator");
 
@@ -38,51 +27,81 @@ Window::Window() {
     editing_notebook->signal_switch_page().connect(sigc::mem_fun2(*this, &Window::switchEditingMode));
     this->left_base.pack1(*editing_notebook, Gtk::EXPAND | Gtk::FILL);
 
-    /* #region              LIMIT manipulation */
-    Gtk::Box* hsv_adjustments = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, SPACING);
-    hsv_adjustments->set_border_width(5);
-    editing_notebook->append_page(*hsv_adjustments, "_HSV", true);
+    // initialization of color space data model
+    this->color_space_data = Gtk::ListStore::create(this->color_space_data_columns);
 
-    //TEMP!!!
-    this->setPreviews();
+    Gtk::TreeModel::iterator current_color_space;
+    for (size_t i = 0ul; i < image_proc::ColorSpace::LAST; i++) {
+        Gtk::TreeModel::Row row;
+        if (i == this->current_limit_color_space) {
+            current_color_space = this->color_space_data->append();
+            row = *(current_color_space);
+        } else {
+            row = *(this->color_space_data->append());
+        }
+
+        row[this->color_space_data_columns.color_space]       = static_cast<image_proc::ColorSpace>(i);
+        row[this->color_space_data_columns.color_space_name]  = image_proc::color_space_names[i];
+    }
+
+    /* #region              LIMIT manipulation */
+    Gtk::Box* limit_adjustments = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL, SPACING);
+    limit_adjustments->set_border_width(5);
+    editing_notebook->append_page(*limit_adjustments, "_Limits", true);
+
+    /* #region                  color space selection */
+    Gtk::Box* color_space_selector_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
+    color_space_selector_box->set_border_width(SPACING);
+    limit_adjustments->pack_start(*color_space_selector_box, Gtk::PACK_SHRINK);
+
+    Gtk::Label* color_space_selector_label = Gtk::make_managed<Gtk::Label>("Color Space:");
+    color_space_selector_label->set_halign(Gtk::ALIGN_START);
+    color_space_selector_box->pack_start(*color_space_selector_label, Gtk::PACK_SHRINK);
+
+    this->limit_color_space_selector.set_model(this->color_space_data);
+    this->limit_color_space_selector.pack_start(this->color_space_data_columns.color_space_name);
+    this->limit_color_space_selector.set_active(current_color_space);
+    this->limit_color_space_selector.signal_changed().connect(sigc::mem_fun0(*this, &Window::limitColorSpaceChanged));
+    color_space_selector_box->pack_end(this->limit_color_space_selector, Gtk::PACK_EXPAND_WIDGET);
+    /* #endregion               color space selection */
 
     for (size_t i = 0; i < NR_CHANNELS; i++) {
-        Gtk::Frame* channel_frame = Gtk::make_managed<Gtk::Frame>(image_proc::color_space_channels[this->current_color_space][i]);
-        hsv_adjustments->pack_start(*channel_frame, Gtk::PACK_EXPAND_WIDGET);
+        this->limit_channel_frames[i] = Gtk::Frame(image_proc::color_space_channels[this->current_limit_color_space][i]);
+        limit_adjustments->pack_start(this->limit_channel_frames[i], Gtk::PACK_EXPAND_WIDGET);
 
         Gtk::Box* adjustments_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
         adjustments_box->set_border_width(SPACING);
-        channel_frame->add(*adjustments_box);
+        this->limit_channel_frames[i].add(*adjustments_box);
         
         // min
         size_t adjustments_idx = i * 2ul;
-        this->adjustments[adjustments_idx] = CREATE_MIN_ADJUSTMENT;
-        this->adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, true));
-        Gtk::Scale* min_scale = Gtk::make_managed<Gtk::Scale>(this->adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
-        min_scale->set_inverted();
-        adjustments_box->pack_start(*min_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+        this->limit_adjustments[adjustments_idx] = CREATE_MIN_ADJUSTMENT;
+        this->limit_adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, true));
+        this->limit_scales[adjustments_idx] = Gtk::Scale(this->limit_adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
+        this->limit_scales[adjustments_idx].set_inverted();
+        adjustments_box->pack_start(this->limit_scales[adjustments_idx], Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
         // preview
         Gtk::ScrolledWindow* limit_preview_scaling = Gtk::make_managed<Gtk::ScrolledWindow>();
         limit_preview_scaling->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-        limit_preview_scaling->signal_size_allocate().connect(sigc::bind(sigc::mem_fun3(*this, &Window::limitPreviewChangedSize), i, min_scale));
+        limit_preview_scaling->signal_size_allocate().connect(sigc::bind(sigc::mem_fun2(*this, &Window::limitPreviewChangedSize), i));
         adjustments_box->pack_start(*limit_preview_scaling, Gtk::PACK_SHRINK);
         
         limit_preview_scaling->add(this->limit_preview_images[i]);
 
         // max
         adjustments_idx++;
-        this->adjustments[adjustments_idx] = CREATE_MAX_ADJUSTMENT;
-        this->adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, false));
-        Gtk::Scale* max_scale = Gtk::make_managed<Gtk::Scale>(this->adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
-        max_scale->set_inverted();
-        adjustments_box->pack_start(*max_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+        this->limit_adjustments[adjustments_idx] = CREATE_MAX_ADJUSTMENT;
+        this->limit_adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, false));
+        this->limit_scales[adjustments_idx] = Gtk::Scale(this->limit_adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
+        this->limit_scales[adjustments_idx].set_inverted();
+        adjustments_box->pack_start(this->limit_scales[adjustments_idx], Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
     }
 
     /* #region                  block hsv adjustment */
     Gtk::Box* blocking_adjustment = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL, SPACING);
     blocking_adjustment->set_border_width(SPACING);
-    hsv_adjustments->pack_end(*blocking_adjustment, Gtk::PACK_SHRINK);
+    limit_adjustments->pack_end(*blocking_adjustment, Gtk::PACK_SHRINK);
 
     Gtk::Label* blocking_label = Gtk::make_managed<Gtk::Label>("Block direct processing:");
     blocking_label->set_halign(Gtk::ALIGN_START);
@@ -248,7 +267,7 @@ Window::Window() {
     utility_bar->pack_start(*save_button, Gtk::PACK_SHRINK);
 
     // print
-    //TODO
+    //TODO: print, icon?
     /* #endregion           buttons */
 
     utility_bar->pack_start(this->average_label, Gtk::PACK_EXPAND_PADDING);
@@ -306,6 +325,43 @@ void Window::compressionModechange() {
         this->applyLimitEdits();
     } else {
         this->applyChannelEdits();
+    }
+}
+
+void Window::limitColorSpaceChanged() {
+    Gtk::TreeModel::iterator color_space_data_iter = this->limit_color_space_selector.get_active();
+
+    // sanity check; should not be able to fail
+    assert(color_space_data_iter);
+
+    image_proc::ColorSpace new_color_space = (*color_space_data_iter)[this->color_space_data_columns.color_space];
+
+    if (new_color_space == this->current_limit_color_space) {
+        return;
+    }
+
+    this->current_limit_color_space = new_color_space;
+
+    this->getPreviews();
+
+    size_t nr_of_channels = image_proc::color_space_nr_channels[new_color_space],
+           adjustment_idx;
+    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
+        adjustment_idx = 2 * i;
+
+        if (i < nr_of_channels) {
+            image_proc::convertCVtoGTK(this->limit_preview_references[new_color_space][i], this->limit_preview_images[i]);
+
+            this->limit_scales[adjustment_idx].set_sensitive(true);
+            this->limit_scales[adjustment_idx + 1ul].set_sensitive(true);
+        } else {
+            image_proc::convertCVtoGTK(this->default_preview_image, this->limit_preview_images[i]);
+
+            this->limit_scales[adjustment_idx].set_sensitive(false);
+            this->limit_scales[adjustment_idx + 1ul].set_sensitive(false);
+        }
+
+        this->limit_channel_frames[i].set_label(image_proc::color_space_channels[new_color_space][i]);
     }
 }
 
@@ -375,14 +431,14 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
         this->channel_blocked_flags ^= blocked_mask;
 
         size_t adjustments_base_idx = channel_idx * 2ul;
-        double min_value = this->adjustments[adjustments_base_idx]->get_value(),
-               max_value = this->adjustments[adjustments_base_idx + 1ul]->get_value();
+        double min_value = this->limit_adjustments[adjustments_base_idx]->get_value(),
+               max_value = this->limit_adjustments[adjustments_base_idx + 1ul]->get_value();
         
         if (max_value < min_value) {
             if (called_from_min) {
-                this->adjustments[adjustments_base_idx + 1ul]->set_value(min_value);
+                this->limit_adjustments[adjustments_base_idx + 1ul]->set_value(min_value);
             } else {
-                this->adjustments[adjustments_base_idx]->set_value(max_value);
+                this->limit_adjustments[adjustments_base_idx]->set_value(max_value);
             }
         }
 
@@ -393,8 +449,15 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
     }
 }
 
-void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx, Gtk::Scale* scale) {
-    const Gdk::Rectangle scale_rect = scale->get_range_rect();
+void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx) {
+    if (this->limit_preview_references[this->current_limit_color_space][channel_idx].empty()) {
+        // preview has not yet been loaded and thus can't be rescaled
+        std::clog << "Preview for " << image_proc::color_space_names[this->current_limit_color_space] << " channel: " << channel_idx + 1 << " is not yet loaded." << std::endl;
+
+        return;
+    }
+
+    const Gdk::Rectangle scale_rect = this->limit_scales[2 * channel_idx].get_range_rect();
 
     const int scale_height = scale_rect.get_height(),
               scale_y      = scale_rect.get_y();
@@ -418,10 +481,10 @@ void Window::applyLimitEdits() {
     }
 
     cv::Mat temp;
-    image_proc::limitImageByChannels(this->original_image, temp, this->current_color_space,
-                                     this->adjustments[0]->get_value(), this->adjustments[1]->get_value(),
-                                     this->adjustments[2]->get_value(), this->adjustments[3]->get_value(),
-                                     this->adjustments[4]->get_value(), this->adjustments[5]->get_value());
+    image_proc::limitImageByChannels(this->original_image, temp, this->current_limit_color_space,
+                                     this->limit_adjustments[0]->get_value(), this->limit_adjustments[1]->get_value(),
+                                     this->limit_adjustments[2]->get_value(), this->limit_adjustments[3]->get_value(),
+                                     this->limit_adjustments[4]->get_value(), this->limit_adjustments[5]->get_value());
     image_proc::compressImage(temp, this->altered_image, this->current_compression_level);
 
     this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
@@ -571,17 +634,17 @@ void Window::loadImage() {
 }
 
 void Window::getPreviews() {
-    if (!this->limit_preview_references[this->current_color_space][0].empty()) {
+    if (!this->limit_preview_references[this->current_limit_color_space][0].empty()) {
         return;
     }
 
-    std::clog << "Loading previews for " << image_proc::color_space_names[this->current_color_space] << std::endl;
+    std::clog << "Loading previews for " << image_proc::color_space_names[this->current_limit_color_space] << std::endl;
 
     cv::Mat loaded_image;
     std::string filepath;
 
-    for (size_t i = 0ul; i < image_proc::color_space_nr_channels[this->current_color_space]; i++) {
-        filepath = "../resources/" + image_proc::color_space_names[this->current_color_space] + '_' + image_proc::color_space_channels[this->current_color_space][i] + ".bmp";
+    for (size_t i = 0ul; i < image_proc::color_space_nr_channels[this->current_limit_color_space]; i++) {
+        filepath = "../resources/" + image_proc::color_space_names[this->current_limit_color_space] + '_' + image_proc::color_space_channels[this->current_limit_color_space][i] + ".bmp";
         loaded_image = cv::imread(filepath);
         
         if (loaded_image.empty()) {
@@ -589,23 +652,10 @@ void Window::getPreviews() {
             dialog.set_secondary_text(filepath);
             dialog.run();
 
-            this->limit_preview_references[this->current_color_space][i] = this->default_preview_image;
+            this->limit_preview_references[this->current_limit_color_space][i] = this->default_preview_image;
         } else {
-            this->limit_preview_references[this->current_color_space][i] = std::move(loaded_image);
+            this->limit_preview_references[this->current_limit_color_space][i] = std::move(loaded_image);
         }
-    }
-}
-
-void Window::setPreviews() {
-    this->getPreviews();
-
-    cv::Mat* preview;
-    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        if (image_proc::color_space_channels[this->current_color_space][i] == "") {
-            return; //we are done here
-        }
-        
-        image_proc::convertCVtoGTK(this->limit_preview_references[this->current_color_space][i], this->limit_preview_images[i]);
     }
 }
 /* #endregion   image load/save*/

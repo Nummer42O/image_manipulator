@@ -3,7 +3,7 @@
 #include "macros.hpp"
 #include "color_spaces.hpp"
 
-const std::array<const std::array<const double, NR_CHANNELS>, NR_COLOR_SPACES> color_space_base_layouts {{
+const std::array<const std::array<const double, NR_CHANNELS>, image_proc::ColorSpace::LAST> color_space_base_layouts {{
     {{0.0, 0.0, 0.0}},
     {{0.0, 0.0, 0.0}},          {{0.0, 0.0, 0.0}},          {{0.0, 0.0, 0.0}},          {{0.5, 0.5, 0.5}},          {{0.5, 0.5, 0.5}},
     /*                          Not the best solution for HSV/HLS but better not to complex either                                  */
@@ -39,7 +39,7 @@ int main() {
     cv::ColorConversionCodes conversion_code;
     std::string save_location_base_name, save_location;
     cv::Mat channel_backup;
-    for (size_t i = 0ul; i < NR_COLOR_SPACES; i++) {
+    for (size_t i = 0ul; i < image_proc::ColorSpace::LAST; i++) {
         conversion_code = image_proc::convert_to_rgb[i];
         save_location_base_name = default_save_location + image_proc::color_space_names[i] + '_';
 
