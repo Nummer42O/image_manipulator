@@ -8,7 +8,7 @@
 #define CREATE_MAX_ADJUSTMENT Gtk::Adjustment::create(255.0, 0.0, 255.0)
 
 #define SPACING         5
-#define SCALE_PADDING   20
+#define SCALE_PADDING   1
 
 
 /** TODO:
@@ -17,7 +17,6 @@
  *  - add open/save/print shortcut key binds
  *  - add zooming functionality
  *  - add printing
- *  - add hue-, value-, saturation-scale images to show what value is what
  *  - look into hv_switch again, maybe another version? single button?
  *  - LIMIT presets
  *  - fix windowFinishSetup for moving?
@@ -64,7 +63,12 @@ Window::Window() {
         adjustments_box->pack_start(*min_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
         // preview
-        adjustments_box->pack_start(this->limit_preview_images[i], Gtk::PACK_SHRINK);
+        Gtk::ScrolledWindow* limit_preview_scaling = Gtk::make_managed<Gtk::ScrolledWindow>();
+        limit_preview_scaling->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+        limit_preview_scaling->signal_size_allocate().connect(sigc::bind(sigc::mem_fun3(*this, &Window::limitPreviewChangedSize), i, min_scale));
+        adjustments_box->pack_start(*limit_preview_scaling, Gtk::PACK_SHRINK);
+        
+        limit_preview_scaling->add(this->limit_preview_images[i]);
 
         // max
         adjustments_idx++;
@@ -82,7 +86,7 @@ Window::Window() {
 
     Gtk::Label* blocking_label = Gtk::make_managed<Gtk::Label>("Block direct processing:");
     blocking_label->set_halign(Gtk::ALIGN_START);
-    blocking_adjustment->pack_start(*blocking_label, Gtk::PACK_EXPAND_WIDGET);
+    //blocking_adjustment->pack_start(*blocking_label, Gtk::PACK_EXPAND_WIDGET);
 
     this->direct_application_switch.signal_state_flags_changed().connect(sigc::mem_fun1(*this, &Window::directActivationBlockingChanged));
     blocking_adjustment->pack_end(this->direct_application_switch, Gtk::PACK_SHRINK);
@@ -385,8 +389,20 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
     }
 }
 
-void Window::limitPreviewChangedSize(Gtk::Allocation& allocation) {
-    //TODO: CONTINUE
+void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx, Gtk::Scale* scale) {
+    const Gdk::Rectangle scale_rect = scale->get_range_rect();
+
+    const int scale_height = scale_rect.get_height(),
+              scale_y      = scale_rect.get_y();
+    
+    int limit_preview_width  = STD_PREVIEW_WIDTH, // scale_height * this->limit_preview_aspect_ratio,
+        limit_preview_height = scale_height;
+
+    Glib::RefPtr<Gdk::Pixbuf> buffer = this->limit_preview_images[channel_idx].get_pixbuf();
+    buffer = buffer->scale_simple(limit_preview_width, limit_preview_height, Gdk::INTERP_BILINEAR);
+    this->limit_preview_images[channel_idx].set(buffer);
+
+    this->limit_preview_images[channel_idx].set_margin_top(scale_y / 2);
 }
 /* #endregion       other */
 /* #endregion   signal handlers*/
@@ -556,7 +572,7 @@ void Window::loadImage() {
 }
 
 void Window::getPreviews() {
-    if (this->limit_preview_references[this->current_color_space][0]) {
+    if (!this->limit_preview_references[this->current_color_space][0].empty()) {
         return;
     }
 
@@ -574,9 +590,9 @@ void Window::getPreviews() {
             dialog.set_secondary_text(filepath);
             dialog.run();
 
-            this->limit_preview_references[this->current_color_space][0] = &(this->default_preview_image);
+            this->limit_preview_references[this->current_color_space][0] = (this->default_preview_image);
         } else {
-            this->limit_preview_references[this->current_color_space][0] = &loaded_image;
+            this->limit_preview_references[this->current_color_space][0] = std::move(loaded_image);
         }
     } else {
         for (size_t i = 0ul; i < NR_CHANNELS; i++) {
@@ -588,9 +604,9 @@ void Window::getPreviews() {
                 dialog.set_secondary_text(filepath);
                 dialog.run();
 
-                this->limit_preview_references[this->current_color_space][i] = &(this->default_preview_image);
+                this->limit_preview_references[this->current_color_space][i] = (this->default_preview_image);
             } else {
-                this->limit_preview_references[this->current_color_space][i] = &loaded_image;
+                this->limit_preview_references[this->current_color_space][i] = std::move(loaded_image);
             }
         }
     }
@@ -600,14 +616,12 @@ void Window::setPreviews() {
     this->getPreviews();
 
     cv::Mat* preview;
-
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
         if (image_proc::color_space_channels[this->current_color_space][i] == "") {
             return; //we are done here
         }
-
-        assert(!this->limit_preview_references[this->current_color_space][i]->empty()); //CONTINUE
-        image_proc::convertCVtoGTK(*this->limit_preview_references[this->current_color_space][i], this->limit_preview_images[i]);
+        
+        image_proc::convertCVtoGTK(this->limit_preview_references[this->current_color_space][i], this->limit_preview_images[i]);
     }
 }
 /* #endregion   image load/save*/

@@ -94,9 +94,11 @@ class Window: public Gtk::Window {
         /**
          * Callback to resize limit preview when its scrolled windows size allocation changes.
          * 
-         * @param allocation: new size allocation of parent window
+         * @param <unused>
+         * @param channel_idx: index of the channel the callback gets called on
+         * @param scale: a reference to one of the adjacent scales to set the limit previews height accordingly
         */
-        void limitPreviewChangedSize(Gtk::Allocation& allocation);
+        void limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx, Gtk::Scale* scale);
         /* #endregion       other */
         /* #endregion   signal handlers */
 
@@ -154,8 +156,9 @@ class Window: public Gtk::Window {
         
         // preview handling
         cv::Mat default_preview_image = cv::Mat(STD_PREVIEW_HEIGHT, STD_PREVIEW_WIDTH, CV_8UC3, cv::Scalar(0.0, 0.0, 0.0));
-        std::array<std::array<cv::Mat*, NR_CHANNELS>, NR_COLOR_SPACES> limit_preview_references = {nullptr}; //instanced as nullptr for lazy singleton instantiation
+        std::array<std::array<cv::Mat, NR_CHANNELS>, NR_COLOR_SPACES> limit_preview_references;
         std::array<Gtk::Image, NR_CHANNELS> limit_preview_images;
+        const double limit_preview_aspect_ratio = static_cast<double>(STD_PREVIEW_WIDTH) / static_cast<double>(STD_PREVIEW_HEIGHT);
 
         Gtk::Switch direct_application_switch;
         /* #endregion       limits */
