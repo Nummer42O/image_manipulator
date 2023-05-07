@@ -26,26 +26,24 @@
 
 namespace image_proc {    
     /**
-     * Make a copy of the image where the values of the HSV color space are restricted as given by the parameters.
+     * Make a copy of the image where the values of the channels are restricted as given by the parameters.
      * 
      * @param src: original source image in RGB
      * @param dst: output image (will be overwritten)
-     * @param hue_bottom: lower restriction of hue
-     * @param hue_top: upper restriction of hue
-     * @param sat_bottom: lower restriction of saturation
-     * @param sat_top: upper restriction of saturation
-     * @param val_bottom: lower restriction of value
-     * @param val_top: upper restriction of value
+     * @param color_space: the color space to be used for restriction
+     * @param bottom*: the lower bounds for the channels
+     * @param top*: the upper bounds for the channels
     */
-    void limitImageByHSV(
+    void limitImageByChannels(
         const cv::Mat& src,
         cv::Mat& dst,
-        double hue_bottom,
-        double hue_top,
-        double sat_bottom,
-        double sat_top,
-        double val_bottom,
-        double val_top
+        const ColorSpace& color_space,
+        const double bottom0,
+        const double top0,
+        const double bottom1 = 0.0,
+        const double top1 = 0.0,
+        const double bottom2 = 0.0,
+        const double top2 = 0.0
     );
 
 

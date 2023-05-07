@@ -107,7 +107,7 @@ class Window: public Gtk::Window {
          * Callback to apply the changes made in LIMIT tab.
          * Also applies compression.
         */
-        void applyHSVEdits();
+        void applyLimitEdits();
 
         /**
          * Callback to apply the changed made in Channels tab.

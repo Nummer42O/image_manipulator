@@ -303,7 +303,7 @@ void Window::compressionModechange() {
             return;
         }
 
-        this->applyHSVEdits();
+        this->applyLimitEdits();
     } else {
         this->applyChannelEdits();
     }
@@ -339,7 +339,7 @@ void Window::switchEditingMode(Gtk::Widget*, guint page_number) {
             return;
         }
 
-        this->applyHSVEdits();
+        this->applyLimitEdits();
     } else {
         this->applyChannelEdits();
     }
@@ -349,7 +349,7 @@ void Window::directActivationBlockingChanged(const Gtk::StateFlags&) {
     this->direct_activation_blocked = this->direct_application_switch.get_state();
 
     if (this->current_page_number == Pages::LIMIT && !this->direct_activation_blocked) {
-        this->applyHSVEdits();
+        this->applyLimitEdits();
     }
 }
 /* #endregion       button signals */
@@ -386,6 +386,8 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
             }
         }
 
+        this->applyLimitEdits();
+
         // switch blocking for this channel off
         this->channel_blocked_flags ^= blocked_mask;
     }
@@ -410,21 +412,16 @@ void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx
 /* #endregion   signal handlers*/
 
 /* #region      apply functions */
-void Window::applyHSVEdits() {
-    if (this->original_image.empty()) {
+void Window::applyLimitEdits() {
+    if (this->original_image.empty() || this->direct_activation_blocked) {
         return;
     }
 
-    double hue_min = this->adjustments[0]->get_value(),
-           hue_max = this->adjustments[1]->get_value(),
-           sat_min = this->adjustments[2]->get_value(),
-           sat_max = this->adjustments[3]->get_value(),
-           val_min = this->adjustments[4]->get_value(),
-           val_max = this->adjustments[5]->get_value();
-
     cv::Mat temp;
-    image_proc::limitImageByHSV(this->original_image, temp,
-                                hue_min, hue_max, sat_min, sat_max, val_min, val_max);
+    image_proc::limitImageByChannels(this->original_image, temp, this->current_color_space,
+                                     this->adjustments[0]->get_value(), this->adjustments[1]->get_value(),
+                                     this->adjustments[2]->get_value(), this->adjustments[3]->get_value(),
+                                     this->adjustments[4]->get_value(), this->adjustments[5]->get_value());
     image_proc::compressImage(temp, this->altered_image, this->current_compression_level);
 
     this->average_label.set_text(image_proc::getAverageColorString(this->altered_image));
@@ -511,7 +508,7 @@ void Window::loadImage(const std::string& filepath) {
                 return;
             }
 
-            this->applyHSVEdits();
+            this->applyLimitEdits();
         } else {
             this->applyChannelEdits();
         }
@@ -566,7 +563,7 @@ void Window::loadImage() {
                 return;
             }
 
-            this->applyHSVEdits();
+            this->applyLimitEdits();
         } else {
             this->applyChannelEdits();
         }

@@ -5,18 +5,28 @@
 #define MAX_8BIT 0xFF
 
 
-void image_proc::limitImageByHSV(const cv::Mat& src, cv::Mat& dst, double hue_bottom, double hue_top, double sat_bottom, double sat_top, double val_bottom, double val_top) {
-    //make a mask for the areas which are within the given ranges
-    cv::Scalar lower_boundary(hue_bottom, sat_bottom, val_bottom),
-               upper_boundary(hue_top, sat_top, val_top);
-    cv::Mat mask, temp;
-    cv::cvtColor(src, temp, cv::COLOR_RGB2HSV_FULL);
-    cv::inRange(temp, lower_boundary, upper_boundary, mask);
+void image_proc::limitImageByChannels(const cv::Mat& src, cv::Mat& dst, const ColorSpace& color_space,
+                                      const double bottom0, const double top0, const double bottom1, const double top1, const double bottom2, const double top2) {
+    const cv::Scalar lower_boundary(bottom0, bottom1, bottom2),
+                     upper_boundary(top0,    top1,    top2);
 
+    // make a mask for the areas which are within the given ranges
+    cv::Mat mask;
+    if (color_space) { // color_space 0 is RGB, so it does not need to be converted
+        cv::Mat temp;
+
+        cv::cvtColor(src, temp, image_proc::convert_from_rgb[color_space]);
+        cv::inRange(temp, lower_boundary, upper_boundary, mask);
+    } else {
+        cv::inRange(src, lower_boundary, upper_boundary, mask);
+    }
+
+    // create gray 3-channel background image
     cv::Mat gray, foreground, background;
     cv::cvtColor(src,  gray, cv::COLOR_RGB2GRAY);
     cv::cvtColor(gray, gray, cv::COLOR_GRAY2RGB);
 
+    // mask the gray background with the colorful original image
     cv::bitwise_or(src, src, foreground, mask);
     cv::bitwise_not(mask, mask);
     cv::bitwise_or(gray, gray, background, mask);
