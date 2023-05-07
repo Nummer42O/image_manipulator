@@ -8,21 +8,6 @@
 #include "macros.hpp"
 #include "color_spaces.hpp"
 
-/*
- * Channels of GRAY color space: 1
- * Channels of BGR color space: 3
- * Channels of BGR565 color space: 2
- * Channels of BGR555 color space: 2
- * Channels of XYZ color space: 3
- * Channels of YCrCb color space: 3
- * Channels of Lab color space: 3
- * Channels of Luv color space: 3
- * Channels of HSV color space: 3
- * Channels of HLS color space: 3
- * Channels of YUV color space: 3
- * Channels of YUV_I420 color space: 1
- * Channels of YUV_YV12 color space: 1
-*/
 
 namespace image_proc {    
     /**

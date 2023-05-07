@@ -6,6 +6,7 @@
 
 #include "macros.hpp"
 
+
 namespace image_proc {
     enum ColorSpace {
         RGB,
@@ -19,12 +20,20 @@ namespace image_proc {
         "Luv",                      "HSV",                      "HLS",                      "YUV",                      "YUV_I420",
         "YUV_YV12",
     };
+
     const std::array<const std::array<const std::string, NR_CHANNELS>, NR_COLOR_SPACES> color_space_channels {{
         {{" R ", " G ", " B "}},
         {{" GRAY ", "", ""}},       {{" B ", " G ", " R "}},    {{" X ", " Y ", " Z "}},    {{" Y ", " Cr ", " Cb "}},  {{" L ", " a ", " b "}},
         {{" L ", " u ", " v "}},    {{" H ", " S ", " V "}},    {{" H ", " L ", " S "}},    {{" Y ", " U ", " V "}},    {{" Y ", "", ""}},
         {{" Y ", "", ""}},
     }};
+    const std::array<const size_t, NR_COLOR_SPACES> color_space_nr_channels {
+        /*RGB*/ 3ul,
+        /*GRAY*/ 1ul,               /*BGR*/ 3ul,                /*XYZ*/ 3ul,                /*YCrCb*/ 3ul,              /*Lab*/ 3ul,
+        /*Luv*/ 3ul,                /*HSV*/ 3ul,                /*HLS*/ 3ul,                /*YUV*/ 3ul,                /*YUV_I420*/ 1ul,
+        /*YUV_YV12*/ 1ul,
+    };
+
     const std::array<cv::ColorConversionCodes, NR_COLOR_SPACES> convert_from_rgb {
         cv::COLOR_COLORCVT_MAX,
         cv::COLOR_RGB2GRAY,         cv::COLOR_RGB2BGR,          cv::COLOR_RGB2XYZ,          cv::COLOR_RGB2YCrCb,        cv::COLOR_RGB2Lab,

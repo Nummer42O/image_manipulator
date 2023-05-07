@@ -294,7 +294,7 @@ Window::Window() {
 }
 
 /* #region      signal handlers */
-/* #region          radio button signals */
+/* #region          selection signals */
 void Window::compressionModechange() {
     this->current_compression_level = this->compression_level_adj->get_value();
 
@@ -324,7 +324,7 @@ void Window::changeChannelManipulatorChannel(const image_proc::ChannelOption& op
         this->applyChannelEdits();
     }
 }
-/* #endregion       radio button signals */
+/* #endregion       selection signals */
 
 /* #region          button signals */
 void Window::orientationChange(const Gtk::StateFlags&) {
@@ -580,8 +580,8 @@ void Window::getPreviews() {
     cv::Mat loaded_image;
     std::string filepath;
 
-    if (image_proc::color_space_channels[this->current_color_space][1] == "") { //color space only has one channel
-        filepath = "../resources/" + image_proc::color_space_names[this->current_color_space] + ".bmp";
+    for (size_t i = 0ul; i < image_proc::color_space_nr_channels[this->current_color_space]; i++) {
+        filepath = "../resources/" + image_proc::color_space_names[this->current_color_space] + '_' + image_proc::color_space_channels[this->current_color_space][i] + ".bmp";
         loaded_image = cv::imread(filepath);
         
         if (loaded_image.empty()) {
@@ -589,24 +589,9 @@ void Window::getPreviews() {
             dialog.set_secondary_text(filepath);
             dialog.run();
 
-            this->limit_preview_references[this->current_color_space][0] = (this->default_preview_image);
+            this->limit_preview_references[this->current_color_space][i] = this->default_preview_image;
         } else {
-            this->limit_preview_references[this->current_color_space][0] = std::move(loaded_image);
-        }
-    } else {
-        for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-            filepath = "../resources/" + image_proc::color_space_names[this->current_color_space] + '_' + image_proc::color_space_channels[this->current_color_space][i] + ".bmp";
-            loaded_image = cv::imread(filepath);
-            
-            if (loaded_image.empty()) {
-                Gtk::MessageDialog dialog(*this, "Failed to load preview image. Using default.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
-                dialog.set_secondary_text(filepath);
-                dialog.run();
-
-                this->limit_preview_references[this->current_color_space][i] = (this->default_preview_image);
-            } else {
-                this->limit_preview_references[this->current_color_space][i] = std::move(loaded_image);
-            }
+            this->limit_preview_references[this->current_color_space][i] = std::move(loaded_image);
         }
     }
 }

@@ -26,7 +26,7 @@ class Window: public Gtk::Window {
         void loadImage(const std::string& filepath);
     private:
         /* #region      signal handlers */
-        /* #region          radio button handlers */
+        /* #region          selection handlers */
         /**
          * Callback for a change in the compression level.
         */
@@ -47,7 +47,7 @@ class Window: public Gtk::Window {
          * @param option: new channel option to be set
         */
         void changeChannelManipulatorChannel(const image_proc::ChannelOption& option);
-        /* #endregion       radio button handlers */
+        /* #endregion       selection handlers */
 
         /* #region          button handlers */
         /**
