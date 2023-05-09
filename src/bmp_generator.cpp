@@ -19,7 +19,7 @@ cv::Mat createRangedChannel() {
 
     channel.forEach<Pixel>(
         [](Pixel& pixel, const int position[2]) {
-            pixel[0] = STD_PREVIEW_HEIGHT - position[0] - 1u;
+            pixel[0] = static_cast<double>(STD_PREVIEW_HEIGHT - position[0] - 1u) * 255.0 / STD_PREVIEW_HEIGHT;
         }
     );
 
