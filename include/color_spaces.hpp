@@ -30,10 +30,10 @@ namespace image_proc {
         {{" Y ", "", ""}},
     }};
     const std::array<const size_t, ColorSpace::LAST> color_space_nr_channels {
-        /*RGB*/ 3ul,
-        /*GRAY*/ 1ul,               /*BGR*/ 3ul,                /*XYZ*/ 3ul,                /*YCrCb*/ 3ul,              /*Lab*/ 3ul,
-        /*Luv*/ 3ul,                /*HSV*/ 3ul,                /*HLS*/ 3ul,                /*YUV*/ 3ul,                /*YUV_I420*/ 1ul,
-        /*YUV_YV12*/ 1ul,
+        3ul, /*RGB*/
+        1ul, /*GRAY*/               3ul, /*BGR*/                3ul, /*XYZ*/                3ul, /*YCrCb*/              3ul, /*Lab*/
+        3ul, /*Luv*/                3ul, /*HSV*/                3ul, /*HLS*/                3ul, /*YUV*/                1ul, /*YUV_I420*/
+        1ul, /*YUV_YV12*/
     };
 
     const std::array<cv::ColorConversionCodes, ColorSpace::LAST> convert_from_rgb {

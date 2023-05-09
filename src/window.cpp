@@ -30,12 +30,11 @@ Window::Window() {
     // initialization of color space data model
     this->color_space_data = Gtk::ListStore::create(this->color_space_data_columns);
 
-    Gtk::TreeModel::iterator current_color_space;
     for (size_t i = 0ul; i < image_proc::ColorSpace::LAST; i++) {
         Gtk::TreeModel::Row row;
         if (i == this->current_limit_color_space) {
-            current_color_space = this->color_space_data->append();
-            row = *(current_color_space);
+            this->current_limit_color_space_iter = this->color_space_data->append();
+            row = *(this->current_limit_color_space_iter);
         } else {
             row = *(this->color_space_data->append());
         }
@@ -60,11 +59,12 @@ Window::Window() {
 
     this->limit_color_space_selector.set_model(this->color_space_data);
     this->limit_color_space_selector.pack_start(this->color_space_data_columns.color_space_name);
-    this->limit_color_space_selector.set_active(current_color_space);
+    this->limit_color_space_selector.set_active(this->current_limit_color_space_iter);
     this->limit_color_space_selector.signal_changed().connect(sigc::mem_fun0(*this, &Window::limitColorSpaceChanged));
     color_space_selector_box->pack_end(this->limit_color_space_selector, Gtk::PACK_EXPAND_WIDGET);
     /* #endregion               color space selection */
 
+    this->getPreviews();
     for (size_t i = 0; i < NR_CHANNELS; i++) {
         this->limit_channel_frames[i] = Gtk::Frame(image_proc::color_space_channels[this->current_limit_color_space][i]);
         limit_adjustments->pack_start(this->limit_channel_frames[i], Gtk::PACK_EXPAND_WIDGET);
@@ -87,6 +87,7 @@ Window::Window() {
         limit_preview_scaling->signal_size_allocate().connect(sigc::bind(sigc::mem_fun2(*this, &Window::limitPreviewChangedSize), i));
         adjustments_box->pack_start(*limit_preview_scaling, Gtk::PACK_SHRINK);
         
+        image_proc::convertCVtoGTK(this->limit_preview_references[this->current_limit_color_space][i], this->limit_preview_images[i]);
         limit_preview_scaling->add(this->limit_preview_images[i]);
 
         // max
@@ -334,18 +335,36 @@ void Window::limitColorSpaceChanged() {
     // sanity check; should not be able to fail
     assert(color_space_data_iter);
 
-    image_proc::ColorSpace new_color_space = (*color_space_data_iter)[this->color_space_data_columns.color_space];
-
-    if (new_color_space == this->current_limit_color_space) {
+    if (color_space_data_iter == this->current_limit_color_space_iter) {
         return;
     }
 
-    this->current_limit_color_space = new_color_space;
+    image_proc::ColorSpace new_color_space = (*color_space_data_iter)[this->color_space_data_columns.color_space];
+
+    if ((new_color_space == image_proc::ColorSpace::YUV_I420 || new_color_space == image_proc::ColorSpace::YUV_YV12) &&
+        (this->original_image.rows % 2 != 0 || this->original_image.cols % 2 != 0)) {
+        //from YUV: CV_Assert( sz.width % 2 == 0 && sz.height % 2 == 0);
+        //to YUV:   CV_Assert( sz.width % 2 == 0 && sz.height % 3 == 0);
+
+        Gtk::MessageDialog dialog(*this, "Image height and width must be multiple of 2.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        std::stringstream secondary_text;
+        secondary_text << "Size is: width=" << this->original_image.cols << " height=" << this->original_image.rows;
+        dialog.set_secondary_text(secondary_text.str());
+        dialog.run();
+
+        this->limit_color_space_selector.set_active(this->current_limit_color_space_iter);
+
+        return;
+    } else {
+        this->current_limit_color_space_iter = color_space_data_iter;
+        this->current_limit_color_space = new_color_space;
+    }
 
     this->getPreviews();
 
     size_t nr_of_channels = image_proc::color_space_nr_channels[new_color_space],
            adjustment_idx;
+    Gdk::Rectangle rect;
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
         adjustment_idx = 2 * i;
 
@@ -360,9 +379,12 @@ void Window::limitColorSpaceChanged() {
             this->limit_scales[adjustment_idx].set_sensitive(false);
             this->limit_scales[adjustment_idx + 1ul].set_sensitive(false);
         }
+        this->limitPreviewChangedSize(rect, i);
 
         this->limit_channel_frames[i].set_label(image_proc::color_space_channels[new_color_space][i]);
     }
+
+    this->applyLimitEdits();
 }
 
 void Window::changeChannelManipulatorModifier(const image_proc::ModifierOption& option) {
@@ -450,12 +472,12 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
 }
 
 void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx) {
-    if (this->limit_preview_references[this->current_limit_color_space][channel_idx].empty()) {
-        // preview has not yet been loaded and thus can't be rescaled
-        std::clog << "Preview for " << image_proc::color_space_names[this->current_limit_color_space] << " channel: " << channel_idx + 1 << " is not yet loaded." << std::endl;
+    // if (this->limit_preview_references[this->current_limit_color_space][channel_idx].empty()) {
+    //     // preview has not yet been loaded and thus can't be rescaled
+    //     std::clog << "Preview for " << image_proc::color_space_names[this->current_limit_color_space] << " channel: " << channel_idx + 1 << " is not yet loaded." << std::endl;
 
-        return;
-    }
+    //     return;
+    // }
 
     const Gdk::Rectangle scale_rect = this->limit_scales[2 * channel_idx].get_range_rect();
 
@@ -466,6 +488,14 @@ void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx
         limit_preview_height = scale_height;
 
     Glib::RefPtr<Gdk::Pixbuf> buffer = this->limit_preview_images[channel_idx].get_pixbuf();
+    if (!buffer) {
+        std::clog << "Image for color space: " << image_proc::color_space_names[this->current_limit_color_space]
+                  << " channel "               << channel_idx + 1
+                  << " not yet set. Skipping." << std::endl;
+
+        return;
+    }
+
     buffer = buffer->scale_simple(limit_preview_width, limit_preview_height, Gdk::INTERP_BILINEAR);
     this->limit_preview_images[channel_idx].set(buffer);
 

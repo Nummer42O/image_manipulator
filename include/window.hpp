@@ -149,7 +149,8 @@ class Window: public Gtk::Window {
         Glib::RefPtr<Gtk::ListStore> color_space_data;
 
         /* #region          limits  */
-        image_proc::ColorSpace      current_limit_color_space = image_proc::ColorSpace::RGB; //only temp
+        image_proc::ColorSpace current_limit_color_space = image_proc::ColorSpace::RGB;
+        Gtk::TreeModel::iterator current_limit_color_space_iter;
         
         // min and max limit_adjustments for each channel
         // pattern: min, max, min, max, min, max
