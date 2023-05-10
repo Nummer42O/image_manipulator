@@ -1,0 +1,50 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "image_manipulator",
+            "presentation": {
+                "hidden": false,
+                "group": "Debug",
+                "order": 1
+            },
+            
+            "preLaunchTask": "cmake-build",
+
+            "cwd": "${workspaceFolder}/build",
+            "program": "${workspaceFolder}/build/main",
+            "args": ["--image", "${workspaceFolder}/image.png"],
+            
+            "request": "launch",
+            "type": "cppdbg",
+            
+            "logging": {
+                "moduleLoad": false
+            },
+        },
+        {
+            "name": "bmp_generator",
+            "presentation": {
+                "hidden": false,
+                "group": "Debug",
+                "order": 1
+            },
+            
+            "preLaunchTask": "cmake-build",
+
+            "cwd": "${workspaceFolder}/build",
+            "program": "${workspaceFolder}/build/bmp_generator",
+            "args": [],
+            
+            "request": "launch",
+            "type": "cppdbg",
+            
+            "logging": {
+                "moduleLoad": false
+            },
+        }
+    ]
+}

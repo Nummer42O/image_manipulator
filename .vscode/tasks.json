@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake-build",
+            "type": "shell",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "make",
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "runOn": "default"
+            }
+        },
+        {
+            "label": "clear build",
+            "type": "shell",
+            "group": "none",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "command": "rm -rf * && cmake -DCMAKE_BUILD_TYPE=Debug ..",
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "clear": true,
+                "close": false
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "runOn": "default"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

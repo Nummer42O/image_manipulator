@@ -1,0 +1,9 @@
+TODO: add option to take altered image as original image -> apply?
+TODO: unsaved changes warning?
+TODO: add open/save/print shortcut key binds
+TODO: add zooming functionality
+TODO: add printing
+TODO: look into hv_switch again, maybe another version? single button?
+TODO: LIMIT presets
+TODO: fix windowFinishSetup for moving?
+TODO: test if changing enums to enum classes breaks anything and maybe do/fix that
