@@ -11,23 +11,23 @@ void image_proc::limitImageByChannels(const cv::Mat& src, cv::Mat& dst, const Co
                      upper_boundary(top0,    top1,    top2);
 
     // make a mask for the areas which are within the given ranges
-    cv::Mat mask;
+    cv::Mat mask, temp;
     if (color_space) { // color_space 0 is RGB, so it does not need to be converted
-        cv::Mat temp;
-
         cv::cvtColor(src, temp, image_proc::convert_from_rgb[color_space]);
         cv::inRange(temp, lower_boundary, upper_boundary, mask);
     } else {
-        cv::inRange(src, lower_boundary, upper_boundary, mask);
+        cv::copyTo(src, temp, cv::noArray());
+        cv::inRange(temp, lower_boundary, upper_boundary, mask);
     }
 
     // create gray 3-channel background image
     cv::Mat gray, foreground, background;
-    cv::cvtColor(src,  gray, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(temp, gray, cv::COLOR_RGB2GRAY);
     cv::cvtColor(gray, gray, cv::COLOR_GRAY2RGB);
 
     // mask the gray background with the colorful original image
-    cv::bitwise_or(src, src, foreground, mask);
+    std::cout << mask.size() << temp.size() << cv::typeToString(mask.type()) << std::endl;
+    cv::bitwise_or(temp, temp, foreground, mask);
     cv::bitwise_not(mask, mask);
     cv::bitwise_or(gray, gray, background, mask);
     cv::bitwise_or(foreground, background, dst);

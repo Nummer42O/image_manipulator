@@ -7,3 +7,4 @@ TODO: look into hv_switch again, maybe another version? single button?
 TODO: LIMIT presets
 TODO: fix windowFinishSetup for moving?
 TODO: test if changing enums to enum classes breaks anything and maybe do/fix that
+TODO: fix special YUV spaces -> might needs to be removed since it changes the output size
