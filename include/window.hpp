@@ -150,12 +150,11 @@ class Window: public Gtk::Window {
 
         /* #region          limits  */
         image_proc::ColorSpace current_limit_color_space = image_proc::ColorSpace::RGB;
-        Gtk::TreeModel::iterator current_limit_color_space_iter;
         
         // min and max limit_adjustments for each channel
         // pattern: min, max, min, max, min, max
         std::array<Glib::RefPtr<Gtk::Adjustment>, 2 * NR_CHANNELS>  limit_adjustments;
-        std::array<Gtk::Scale, 2 * NR_CHANNELS>                     limit_scales;
+        std::array<Gtk::Scale, NR_CHANNELS>                         limit_min_scales;
         std::array<Gtk::Frame, NR_CHANNELS>                         limit_channel_frames;
         /**
          * bit 0: channel 0

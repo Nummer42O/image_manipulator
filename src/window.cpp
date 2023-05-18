@@ -30,11 +30,12 @@ Window::Window() {
     // initialization of color space data model
     this->color_space_data = Gtk::ListStore::create(this->color_space_data_columns);
 
+    Gtk::TreeModel::iterator current_limit_color_space_iter;
     for (size_t i = 0ul; i < image_proc::ColorSpace::LAST; i++) {
         Gtk::TreeModel::Row row;
         if (i == this->current_limit_color_space) {
-            this->current_limit_color_space_iter = this->color_space_data->append();
-            row = *(this->current_limit_color_space_iter);
+            current_limit_color_space_iter = this->color_space_data->append();
+            row = *current_limit_color_space_iter;
         } else {
             row = *(this->color_space_data->append());
         }
@@ -59,7 +60,7 @@ Window::Window() {
 
     this->limit_color_space_selector.set_model(this->color_space_data);
     this->limit_color_space_selector.pack_start(this->color_space_data_columns.color_space_name);
-    this->limit_color_space_selector.set_active(this->current_limit_color_space_iter);
+    this->limit_color_space_selector.set_active(current_limit_color_space_iter);
     this->limit_color_space_selector.signal_changed().connect(sigc::mem_fun0(*this, &Window::limitColorSpaceChanged));
     color_space_selector_box->pack_end(this->limit_color_space_selector, Gtk::PACK_EXPAND_WIDGET);
     /* #endregion               color space selection */
@@ -77,9 +78,9 @@ Window::Window() {
         size_t adjustments_idx = i * 2ul;
         this->limit_adjustments[adjustments_idx] = CREATE_MIN_ADJUSTMENT;
         this->limit_adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, true));
-        this->limit_scales[adjustments_idx] = Gtk::Scale(this->limit_adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
-        this->limit_scales[adjustments_idx].set_inverted();
-        adjustments_box->pack_start(this->limit_scales[adjustments_idx], Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+        this->limit_min_scales[i] = Gtk::Scale(this->limit_adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
+        this->limit_min_scales[i].set_inverted();
+        adjustments_box->pack_start(this->limit_min_scales[i], Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
 
         // preview
         Gtk::ScrolledWindow* limit_preview_scaling = Gtk::make_managed<Gtk::ScrolledWindow>();
@@ -94,9 +95,9 @@ Window::Window() {
         adjustments_idx++;
         this->limit_adjustments[adjustments_idx] = CREATE_MAX_ADJUSTMENT;
         this->limit_adjustments[adjustments_idx]->signal_value_changed().connect(sigc::bind(sigc::mem_fun2(*this, &Window::changedAdjustment), i, false));
-        this->limit_scales[adjustments_idx] = Gtk::Scale(this->limit_adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
-        this->limit_scales[adjustments_idx].set_inverted();
-        adjustments_box->pack_start(this->limit_scales[adjustments_idx], Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
+        Gtk::Scale* max_scale = Gtk::make_managed<Gtk::Scale>(this->limit_adjustments[adjustments_idx], Gtk::ORIENTATION_VERTICAL);
+        max_scale->set_inverted();
+        adjustments_box->pack_start(*max_scale, Gtk::PACK_EXPAND_PADDING, SCALE_PADDING);
     }
 
     /* #region                  block hsv adjustment */
@@ -334,51 +335,19 @@ void Window::limitColorSpaceChanged() {
 
     // sanity check; should not be able to fail
     assert(color_space_data_iter);
-
-    if (color_space_data_iter == this->current_limit_color_space_iter) {
-        return;
-    }
-
     image_proc::ColorSpace new_color_space = (*color_space_data_iter)[this->color_space_data_columns.color_space];
 
-    if ((new_color_space == image_proc::ColorSpace::YUV_I420 || new_color_space == image_proc::ColorSpace::YUV_YV12) &&
-        (this->original_image.rows % 2 != 0 || this->original_image.cols % 2 != 0)) {
-        //from YUV: CV_Assert( sz.width % 2 == 0 && sz.height % 2 == 0);
-        //to YUV:   CV_Assert( sz.width % 2 == 0 && sz.height % 3 == 0);
-
-        Gtk::MessageDialog dialog(*this, "Image height and width must be multiple of 2.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
-        std::stringstream secondary_text;
-        secondary_text << "Size is: width=" << this->original_image.cols << " height=" << this->original_image.rows;
-        dialog.set_secondary_text(secondary_text.str());
-        dialog.run();
-
-        this->limit_color_space_selector.set_active(this->current_limit_color_space_iter);
-
+    if (new_color_space == this->current_limit_color_space) {
         return;
     } else {
-        this->current_limit_color_space_iter = color_space_data_iter;
         this->current_limit_color_space = new_color_space;
     }
 
     this->getPreviews();
 
-    size_t nr_of_channels = image_proc::color_space_nr_channels[new_color_space],
-           adjustment_idx;
     Gdk::Rectangle rect;
     for (size_t i = 0ul; i < NR_CHANNELS; i++) {
-        adjustment_idx = 2 * i;
-
-        if (i < nr_of_channels) {
-            image_proc::convertCVtoGTK(this->limit_preview_references[new_color_space][i], this->limit_preview_images[i]);
-
-            this->limit_scales[adjustment_idx].set_sensitive(true);
-            this->limit_scales[adjustment_idx + 1ul].set_sensitive(true);
-        } else {
-            image_proc::convertCVtoGTK(this->default_preview_image, this->limit_preview_images[i]);
-
-            this->limit_scales[adjustment_idx].set_sensitive(false);
-            this->limit_scales[adjustment_idx + 1ul].set_sensitive(false);
-        }
+        image_proc::convertCVtoGTK(this->limit_preview_references[new_color_space][i], this->limit_preview_images[i]);
         this->limitPreviewChangedSize(rect, i);
 
         this->limit_channel_frames[i].set_label(image_proc::color_space_channels[new_color_space][i]);
@@ -472,14 +441,7 @@ void Window::changedAdjustment(size_t channel_idx, bool called_from_min) {
 }
 
 void Window::limitPreviewChangedSize(Gtk::Allocation&, const size_t& channel_idx) {
-    // if (this->limit_preview_references[this->current_limit_color_space][channel_idx].empty()) {
-    //     // preview has not yet been loaded and thus can't be rescaled
-    //     std::clog << "Preview for " << image_proc::color_space_names[this->current_limit_color_space] << " channel: " << channel_idx + 1 << " is not yet loaded." << std::endl;
-
-    //     return;
-    // }
-
-    const Gdk::Rectangle scale_rect = this->limit_scales[2 * channel_idx].get_range_rect();
+    const Gdk::Rectangle scale_rect = this->limit_min_scales[channel_idx].get_range_rect();
 
     const int scale_height = scale_rect.get_height(),
               scale_y      = scale_rect.get_y();
@@ -673,12 +635,12 @@ void Window::getPreviews() {
     cv::Mat loaded_image;
     std::string filepath;
 
-    for (size_t i = 0ul; i < image_proc::color_space_nr_channels[this->current_limit_color_space]; i++) {
+    for (size_t i = 0ul; i < NR_CHANNELS; i++) {
         filepath = "../resources/" + image_proc::color_space_names[this->current_limit_color_space] + '_' + image_proc::color_space_channels[this->current_limit_color_space][i] + ".bmp";
         loaded_image = cv::imread(filepath);
         
         if (loaded_image.empty()) {
-            Gtk::MessageDialog dialog(*this, "Failed to load preview image. Using default.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+            Gtk::MessageDialog dialog(*this, "Failed to load preview image:", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
             dialog.set_secondary_text(filepath);
             dialog.run();
 
